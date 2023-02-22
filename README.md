@@ -1,0 +1,3 @@
+# CHATGPT 
+
+Some exporations 
