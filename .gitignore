@@ -1,4 +1,7 @@
 amicorpus/
+notebooks/TFgpt-j-6B-hd5/
+notebooks/TFgpt-j-6B/
+notebooks/gpt-j-6B/
 NNBook
 # ignore macOS hidden files
 *.DS_Store
