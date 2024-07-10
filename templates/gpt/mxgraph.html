@@ -1,0 +1,256 @@
+{% extends "common.html" %}
+{% block content %}
+<script type="text/javascript">mxBasePath = '/static/mxgraph-js/javascript/src'</script>
+<script type="text/javascript" src="/static/mxgraph-js/javascript/src/js/mxClient.js"></script>
+<!-- -----------------------------------------------------------------------------
+    STYLE
+------------------------------------------------------------------------------- -->
+<style>
+.toolbarimg{
+    width: 32px;
+    padding: 4px;;
+}
+.tbdiv{
+    padding: 10px;
+    margin:  10px;
+    border: 1px solid black;
+    background-color: white;
+    border-radius: 6px;;
+    text-align: center;
+}
+</style>
+<!-- -----------------------------------------------------------------------------
+    HTML
+------------------------------------------------------------------------------- -->
+{% include "gpt/top.html" %}
+    
+<div class="row" style ="width: 100%; height: 90%; padding: 0px;margin: auto;" >
+<div id=graph class="col-md-10">
+
+</div>
+<div class="col-md-2" style="height: 95%; overflow: auto;background-color:gainsboro; text-align: center;"> 
+    <button class="btn btn-primary"  onclick="_graph.zoomIn()"  >+</button>
+    <button class="btn btn-success"  onclick="_graph.zoomOut()" >-</button>
+    <button class="btn btn-success"  onclick="panToggle(this)" >=</button>
+    <hr/>
+    <div id="toolbar" class="tbdiv"></div>
+</div>
+</div>
+<div id="toolbar" class="base" align="right" style="white-space:nowrap;">
+    <!-- Status Here -->
+</div>
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+
+ * This assumes you have a service working
+------------------------------------------------------------------------------- -->
+<script>
+
+var defText = `
+<h3> Hello</h3>
+`    
+var _model = new mxGraphModel();
+var _container = document.getElementById('graph', 6,6);
+var _graph = new mxGraph(_container, _model);
+var graph = _graph
+var _parent = _graph.getDefaultParent();
+var shapes = []
+_graph.dropEnabled = true;
+        // Enables new connections in the graph
+_graph.setConnectable(true);
+_graph.setMultigraph(true);
+mxConnectionHandler.prototype.connectImage = new mxImage('/static/imgs/add.png', 8,8);
+mxConstants.DEFAULT_HOTSPOT = 1;
+mxConstants.HIGHLIGHT_COLOR = null;
+
+mxGraph.prototype.htmlLabels = true;
+mxGraph.prototype.isWrapping = function(cell) { return true; };
+mxGraphHandler.prototype.guidesEnabled = true;
+mxGuide.prototype.isEnabledForEvent = function(evt) { return !mxEvent.isAltDown(evt);    };
+
+// Enables snapping waypoints to terminals
+mxEdgeHandler.prototype.snapToTerminals = true;
+mxConnectionHandler.prototype.waypointsEnabled = true
+
+_graph.alternateEdgeStyle = 'elbow=vertical';
+var style = graph.getStylesheet().getDefaultEdgeStyle();
+style[mxConstants.STYLE_ROUNDED] = true;
+style[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
+style[mxConstants.STYLE_STROKECOLOR] = '#0000ff'
+style[mxConstants.STYLE_STROKEWIDTH] = 2
+style[mxConstants.STYLE_FILLCOLOR] = '#0202aa'
+
+var style = graph.getStylesheet().getDefaultVertexStyle();
+style[mxConstants.STYLE_ROUNDED] = true;
+style[mxConstants.STYLE_EDGE] = mxEdgeStyle.ElbowConnector;
+style[mxConstants.STYLE_] = mxEdgeStyle.ElbowConnector;
+style[mxConstants.STYLE_STROKECOLOR] = '#000000'
+style[mxConstants.STYLE_STROKEWIDTH] = 3
+style[mxConstants.STYLE_FILLCOLOR] = '#c3c0ff'
+
+
+window.onbeforeunload = function() { return mxResources.get('changesLost'); };
+
+function panToggle(but) {
+    console.log(but)
+    if (but.value == 'Pan') {
+        but.value = 'Select';
+        _graph.setPanning(true);
+        mxEvent.disableContextMenu(_container, true);
+    } else {
+        but.value = 'Pan';
+        _graph.setPanning(false);
+        mxEvent.disableContextMenu(_container, false);
+    }
+}
+_graph.setPanning(true);
+mxEvent.disableContextMenu(_container, true);
+
+function start() {
+    var vertexStyle = _graph.getStylesheet().getDefaultVertexStyle();
+    vertexStyle[mxConstants.ROUNDED] = true;
+    _model.beginUpdate();
+    try
+    {
+        var v1 = _graph.insertVertex(_parent, null, defText, 20, 20, 160, 80)
+        var v2 = _graph.insertVertex(_parent, null, 'World!', 200, 20, 160, 80);
+        var v3 = _graph.insertVertex(_parent, null, 'World!', 400, 20, 160, 80);
+        var e1 = _graph.insertEdge(_parent, null, '', v1, v2);
+        shapes.push(v1, v2, v3, e1)
+    }
+    finally{
+    _model.endUpdate();
+    }
+}
+
+var editor = null;
+function init(config='config/workfloweditor.xml') {
+    mxObjectCodec.allowEval = true;
+    var node = mxUtils.load(config).getDocumentElement();
+    editor = new mxEditor(node);
+    mxObjectCodec.allowEval = false;
+
+    // Adds active border for panning inside the container
+    editor.graph.createPanningManager = function() {
+        var pm = new mxPanningManager(this);
+        pm.border = 30;
+        
+        return pm;
+    };
+    
+    editor.graph.allowAutoPanning = true;
+    editor.graph.timerAutoScroll = true;
+    
+    // Updates the window title after opening new files
+    var title = document.title;
+    var funct = function(sender) {
+        document.title = title + ' - ' + sender.getTitle();
+    };
+    
+    editor.addListener(mxEvent.OPEN, funct);
+    
+    // Prints the current root in the window title if the
+    // current root of the graph changes (drilling).
+    editor.addListener(mxEvent.ROOT, funct);
+    funct(editor);
+    
+    // Displays version in statusbar
+    editor.setStatus('mxGraph '+mxClient.VERSION);
+
+    return editor;
+
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function insertShape(shape='sq', text="<edit me>", x=20, y=20, w=120, h=60) {
+    var v1 = _graph.insertVertex(_parent, null, text, x, y, w, h, 'rounded;')
+    shapes.push(v1)
+
+
+    var v = new mxCell(null, new mxGeometry(0, 0, w, h), "shape=swimlane;horizontal=1;");
+    v.setVertex(true);
+    _graph.importCells([v], 0, 0, _parent);
+
+    var v = new mxCell(null, new mxText(0, 0, w, h), "shape=swimlane;");
+    v.setVertex(true);
+    _graph.importCells([v], 0, 0, _parent);
+
+    //mxSwimlane.prototype.isHorizontal = function() { return true; };
+
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    if (!mxClient.isBrowserSupported()) {
+        mxUtils.error('Browser is not supported!', 200, false);
+    } else {
+        init()
+        start()
+        toolbar()
+    }
+})
+</script>
+
+
+<script>
+var tbContainer = document.getElementById('toolbar');
+function toolbar(){
+    var toolbar = new mxToolbar(tbContainer);
+    toolbar.enabled = false;
+        
+    // Matches DnD inside the graph
+    mxDragSource.prototype.getDropTarget = function(graph, x, y) {
+        var cell = graph.getCellAt(x, y);
+        
+        if (!graph.isValidDropTarget(cell)) {
+            cell = null;
+        }
+        return cell;
+    };
+
+    // Stops editing on enter or escape keypress
+    var keyHandler = new mxKeyHandler(_graph);
+    var rubberband = new mxRubberband(_graph);
+        
+    var addVertex = function(icon, w, h, style) {
+        var vertex = new mxCell(null, new mxGeometry(0, 0, w, h), style);
+        vertex.setVertex(true);
+    
+        addToolbarItem(_graph, toolbar, vertex, icon);
+    };
+        
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/swimlane.gif',  120, 160, 'shape=swimlane;startSize=40;');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/rectangle.gif', 100, 40, '');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/rounded.gif',   100, 40, 'shape=rounded');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/ellipse.gif',   40,  40, 'shape=ellipse');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/rhombus.gif',   40,  40, 'shape=rhombus');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/triangle.gif',  40,  40, 'shape=triangle');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/cylinder.gif',  40,  40, 'shape=cylinder');
+    addVertex('/static/mxgraph-js/javascript/examples/editors/images/actor.gif',     30,  40, 'shape=actor');
+}
+
+// Function that is executed when the image is dropped on
+// the graph. The cell argument points to the cell under
+// the mousepointer if there is one.
+function addToolbarItem(graph, toolbar, prototype, image) {
+    var funct = function(graph, evt, cell) {
+        graph.stopEditing(false);
+
+        var pt = graph.getPointForEvent(evt);
+        var vertex = graph.getModel().cloneCell(prototype);
+        vertex.geometry.x = pt.x;
+        vertex.geometry.y = pt.y;
+        
+        graph.setSelectionCells(graph.importCells([vertex], 0, 0, cell));
+    }
+    // Creates the image which is used as the drag icon (preview)
+    var img = toolbar.addMode(null, image, funct, image, "toolbarimg");
+    mxUtils.makeDraggable(img, graph, funct);
+}
+</script>
+
+
+
+
+<script>
+</script>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "common.html" %}
+{% block content %}
+<script src="/static/geoui/recorder.js"></script>
+<script src="/static/geoui/geoaudio.js"></script>
+<style>
+.b {
+    color: red;
+}
+</style>
+
+<button class="a b" id="s1" onclick="a.startRecording ()"><i class="fa fa-microphone"></i> </button>
+<button class="a" id="s2" onclick="a.toggleRecording()"><i class="fa fa-pause"></i> </button>
+<button class="a" id="s3" onclick="a.stopRecording  ()" ><i class="fa fa-stop"></i> </button>
+<button class="a" id="s4" onclick="transcribe  ()" ><i class="fa fa-stop"></i>Transcribe </button>
+<audio controls id="faudio"  >Your browser does not support the audio element.</audio><br/>
+<span id=trans>
+</span>
+
+<script>
+
+async function cb(msg, blob) {
+    console.log(msg)
+    if ( msg == "stopped") {
+        console.log("TRANSCRIBING ... ")
+        resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
+    }
+}
+var a = new GeoAudio(cb, "faudio")
+function transcribeCB(responseTxt) {
+    console.log(responseTxt)
+    $('#trans').text(responseTxt)
+}
+async function startRecord(){
+
+    a.startRecording()
+}
+async function transcribe(){
+    await a.stopRecording()
+}
+</script>
+{% endblock %}
