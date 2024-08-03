@@ -1,0 +1,182 @@
+{% extends "common.html" %}
+{% block content %}
+<style>
+.split {
+    display: flex;
+    flex-direction: row;
+}
+
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
+}
+
+tdextarea {
+    border-color: #e0e0e0;
+    flex: 1 1 auto;
+}
+
+.dflex {
+    border-color: #e0e0e0;
+    flex: 1 1 auto;
+    display: flex;  flex-flow: column;
+}
+.rd{
+    border-radius:26px;
+    border: 0px solid blue;
+}
+.rd1{
+    border: 0px solid blue;
+}
+.rd1:select select{
+    border: 0px solid blue;
+}
+
+audio {
+    height: 20px !important;
+    width: 120px;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+
+.red{color: firebrick}
+</style>
+
+<script src="/static/node_modules/split.js/dist/split.min.js" ></script>
+<script src="/static/geoui/splitter1.js/"></script>
+<script src="/static/geoui/recorder.js"></script>
+<script src="/static/geoui/geoaudio.js"></script>
+
+{% include "gpt/top.html" %}
+<div class="content fcontainer" style="height: calc(100vh - 75px);">
+    <div class="split content" style="flex: 1 1 auto;">
+        <div id="one" class="dflex" style="padding-left:5px;">
+
+            <div>
+                <div class=div1 >
+                    <label class="label1">#Token</label>
+                    <input class="input1" id=max_tokens name=max_tokens  size=2 value=512>  
+                </div>
+                <hr/>
+                <div style="font-size: smaller;text-align: center; font-color:#ccc;">
+                     Prompts: Say 'Activate' for command</div>
+                <input  class="rd1" size=3 name=secs id=sec  value="5"  > 
+                <button class="btn btn-trans rd"  id=mic onclick="toggleRecord()"><i class="fa fa-microphone"></i></button>
+                <audio controls="controls" id="faudio" style=";" ></audio>
+                <button class="btn btn-secondary" onclick="runClick()"><i class="fa  fa-paper-plane"></i>Send</button>
+                
+            </div>
+            <textarea class="dflex" name=prompt id=prompt></textarea>
+        </div>
+        <div id="two" class=dflex >
+            <textarea class="dflex" id="result" ></textarea>
+        </div>
+    </div>
+    <div class="footer">: </div>
+</div>
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+ * This assumes you have a service working
+------------------------------------------------------------------------------- -->
+<script>
+var sizes = localStorage.getItem('split-sizes')
+if (sizes) {
+    sizes = JSON.parse(sizes)
+} else {
+    sizes = [35, 75]
+}
+
+Split(['#one', '#two'], {
+    sizes : sizes,
+    minSize: [0, 100],
+    onDragEnd: function (sizes) {
+        localStorage.setItem('split-sizes', JSON.stringify(sizes))
+    },
+})
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function cb(msg, blob) {
+}
+var a = new GeoAudio(()=>{}, "faudio")
+async function toggleRecord(){
+    if (!$('#mic').hasClass("red")) {
+        $('#mic').addClass("red")
+        a.startRecording()
+        var to = parseInt($('#sec').val()) * 1000
+
+        setTimeout(stopRecord, Math.min(to, 10*60*1000) )    
+    } else {
+        stopRecord()
+    }
+    
+}
+function stopRecord(){
+    $('#mic').removeClass("red")
+    a.stopRecording()
+    setTimeout(transcribe, 500)
+}
+function transcribeCB(responseTxt) {
+    $('#prompt').text(responseTxt)
+}
+function transcribe(){
+    callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*
+respose={
+    "choices": [
+        {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "text": " \n\nMy name is Kaitlyn."
+        }
+    ],
+    "created": 1677042132,
+    "id": "cmpl-6mbYaLDhuWCyoYMmbGrpDqmmCzPPC",
+    "model": "text-davinci-002",
+    "object": "text_completion",
+    "usage": {
+        "completion_tokens": 10,
+        "prompt_tokens": 5,
+        "total_tokens": 15
+    }
+}
+*/
+var prompt = ""
+var linesp = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+
+function runClickCB(responseTxt, statusTxt, xhr) {
+    nbusy()
+    if (JS_error(responseTxt, statusTxt, xhr, true) ) {
+        return;
+    }
+    var js = JSON.parse(responseTxt)
+    console.log(js)
+    $('#result'  ).val(linesp + prompt + "\n\n" + js.choices[0].text.trim() + "\n" + $('#result'  ).val() )
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function runClick(callgpt=0) {
+    busy()
+    var url = (!callgpt) ? '/gpt/testgpt/': '/gpt/callgpt/'
+    prompt = $('#prompt').val().trim()
+    if (prompt == "") {
+        JS_error("Please enter a prompt", "error", "")
+        $('#prompt').effect("shake", { times:3 }, 500);
+        $('#prompt').focus()
+        nbusy()
+        return;
+    }
+    data= { prompt: prompt, max_tokens: $('#max_tokens').val()}
+    var data1 = GET_POSTDATA(data)
+    console.log(url);
+    $.post(url, data1, handleClick1CB)
+}
+</script>
+{% endblock %}
