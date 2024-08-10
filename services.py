@@ -1,6 +1,4 @@
-from django.http import HttpResponse
 from mangorest.mango import webapi
-from transformers import pipeline
 
 device = "cpu"
 if (torch.cuda.is_available() ):
