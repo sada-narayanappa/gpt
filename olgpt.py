@@ -1,16 +1,19 @@
 import ollama, torch, logging,datetime
+from ollama import Client
 from mangorest.mango import webapi
 
+logger = logging.getLogger( "geoapp" )
 device = "cpu"
 if (torch.cuda.is_available() ):
     device = "cuda"
 
-logger = logging.getLogger( "geoapp" )
+
+OLLAMA = Client(host='http://localhost:11434')
 #--------------------------------------------------------------------------------------------------------    
 @webapi("/ollama/generate/")
 def ollma_generate(request=None, model="mistral", prompt="", stream=True,**kwargs):
     logger.info(f"Prepping: {datetime.datetime.now()}")
-    response = ollama.generate(model=model, prompt=prompt, stream=stream)
+    response = OLLAMA.generate(model=model, prompt=prompt, stream=stream)
     # Stream response
     ret = ""
     for chunk in response:
@@ -19,6 +22,3 @@ def ollma_generate(request=None, model="mistral", prompt="", stream=True,**kwarg
         
     logger.debug(ret)
     return ret
-
-ollma_generate(prompt="whos is the chief data scientist of Lockheed Martn", stream=True)   
-    
