@@ -1,4 +1,4 @@
-import ollama, torch, logging,datetime
+import sys, ollama, torch, logging,datetime
 from ollama import Client
 from mangorest.mango import webapi
 sys.path.append(os.path.expanduser("~/.django") )
