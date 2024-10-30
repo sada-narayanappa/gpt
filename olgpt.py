@@ -17,11 +17,12 @@ if (os.path.exists(os.path.expanduser("~/.django/my_config.py"))):
     from my_config import OLLAMA_HOST
 
 OLLAMA = Client(host=OLLAMA_HOST)
-#OLLAMA = Client()
+logger.info(f"OLLAMA_HOST => {OLLAMA_HOST}")
 #--------------------------------------------------------------------------------------------------------    
 @webapi("/ollama/generate/")
-def ollma_generate(request=None, model="mistral", prompt="", stream=True,**kwargs):
+def ollma_generate(request=None, model="llama3|mistral", prompt="", stream=True,**kwargs):
     logger.info(f"Prepping: {datetime.datetime.now()}")
+    model = model.split("|")[0].strip()
     response = OLLAMA.generate(model=model, prompt=prompt, stream=stream)
     # Stream response
     ret = ""

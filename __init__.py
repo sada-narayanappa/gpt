@@ -11,6 +11,7 @@ if (os.path.exists("gpt/whispermod.py")):
     print("whisper Services to be Loaded!")
 
 if (os.path.exists("gpt/olgpt.py")):
-    from . import olgpt
+	pass
+    #from . import olgpt
 
 
