@@ -71,28 +71,29 @@ audio {
 <script src="/static/geoui/geoaudio.js"></script>
 
 {% include "gpt/top.html" %}
-<div class="content fcontainer" style="height: calc(100vh - 75px);">
+<div class="content fcontainer" style="height: calc(100vh - 80px);">
     <div class="split content" style="flex: 1 1 auto;">
-        <div id="one" class="dflex" style="padding-left:5px; min-width: 100px; overflow: scroll;">
+        <div id="one" class="dflex" style="padding-left:5px; min-width: 1px; overflow: scroll;">
             <div>
-                    <div class=div1 >
+                    <div style="font-size: smaller;text-align: center; color:#777;">
+                        <input  class="rd1" size=3 name=audio_len id=audio_len  value="8"  > 
+                        <button class="rbutt32"  id=mic onclick="toggleRecord()"><i class="fa fa-microphone"></i></button>
+                        <button class="rbutt32" onclick="runClick()"><i class="fa  fa-paper-plane"></i></button>
+                        <br/>
+                        <audio controls="controls" id="faudio" ></audio>
+                        <br/>
                         <label class="label1">#Token</label>
                         <input class="input1" id=max_tokens name=max_tokens  size=2 value=512>  
                     </div>
-                    <hr/>
-                    <div style="font-size: smaller;text-align: center; color:#777;">
-                        Prompts: Say 'Activate' for command</div>
-                        <input  class="rd1" size=3 name=audio_len id=audio_len  value="8"  > 
-                        <button class="rbutt32"  id=mic onclick="toggleRecord()"><i class="fa fa-microphone"></i></button>
-                        <audio controls="controls" id="faudio" ></audio>
-                        <button class="rbutt32" onclick="runClick()"><i class="fa  fa-paper-plane"></i></button>
+
                     </div>
                     <div style="font-size: x-small;">
                         EXAMPLES:
                     </div>
-                    <textarea class="ta" name=prompt rows="6" id=prompt placeholder="Enter Prompt - *" required></textarea>
-                    <textarea class="dflex" name=dprompt id=dprompt></textarea>
-            </div>
+                    <textarea class="ta" name=dprompt rows="6" id=dprompt placeholder="Enter Prompt - *" required></textarea>
+                    <textarea class="dflex" name=prompt id=prompt>who was the president of India in 2022
+                    </textarea>
+        </div>
         <div id="two" class=dflex >
             <textarea class="dflex" id="result" ></textarea>
         </div>
@@ -188,7 +189,7 @@ function runClick(callgpt=0) {
     busy()
 
     data= { prompt: prompt, max_tokens: $('#max_tokens').val(), date:Date.now() }
-    callws("/ollama/generate/", "", runClickCB, data)
+    callws("/gpt/openai/", "", runClickCB, data)
 }
 </script>
 {% endblock %}
