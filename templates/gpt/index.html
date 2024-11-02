@@ -32,7 +32,7 @@ audio {
 
 .red{color: firebrick}
 .green{color: green}
-.yellow{color: khaki; background-color: #777;}
+.yellow{color: khaki; background-color: #222;}
 .blue{color: cornflowerblue}
 .purp{color: purple}
 
@@ -97,15 +97,15 @@ audio {
         <div id="two" class=dflex >
             <textarea class="dflex" id="result" ></textarea>
             <div id=examples style="background: white; font-size: small; padding-right: 15px;text-align: center; display: ;">
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm green" onclick="promptExample(this)">Create Bullet points</button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm green" onclick="promptExample(this)">Create Summary </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp" onclick="promptExample(this)">Edit and rewrite </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp" onclick="promptExample(this)">Teach me </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm blue" onclick="promptExample(this)">Write python code </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)">Write an email </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)">Respond to an email </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)">translate text </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)">Recommendation Letter </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm green" onclick="promptExample(this)"><i class="fa fa-list-alt "></i> Create Bullet points</button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm green" onclick="promptExample(this)"><i class="fa fa-check-square"></i>  Create Summary </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp" onclick="promptExample(this)"><i class="fa fa-edit"></i>  Edit and rewrite </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp" onclick="promptExample(this)"><i class="fas fa-chalkboard-teacher"></i> Teach me </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm blue" onclick="promptExample(this)"><i class="fa fa-code"></i>  Write python code </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)"><i class="fa fa-envelope"></i> Write an email </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)"><i class="fa fa-reply"></i> Respond to an email </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-language"></i> translate text </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-comments"></i> Recommendation Letter </button>
 
             </div>
         </div>
@@ -170,7 +170,7 @@ async function promptExample(butt){
             $('#prompt').val('Translate the following text into arabic:\n\n thank you to meet with us and discuss our product')
             break;
         case /recommend/.test(txt):
-            $('#prompt').val('Write a recommendation letter to suit the following in less than 30 sentences:\n\n Recommend my student Shaina Bagri for masters program ')
+            $('#prompt').val('Write a recommendation letter to suit the following in less than 30 sentences:\n\n Recommend my student Ayesha Alkobaisi for masters program ')
             break;
 
         default:
