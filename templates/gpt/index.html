@@ -31,6 +31,7 @@ audio {
 }
 
 .red{color: firebrick}
+.redb{color: white; background-color: firebrick;}
 .green{color: green}
 .yellow{color: khaki; background-color: #222;}
 .blue{color: cornflowerblue}
@@ -106,6 +107,8 @@ audio {
                 <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)"><i class="fa fa-reply"></i> Respond to an email </button>
                 <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-language"></i> translate text </button>
                 <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-comments"></i> Recommendation Letter </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm redb" onclick="promptExample(this)"><i class="fa fa-legal"></i> legal-wo work order </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm redb" onclick="promptExample(this)"><i class="fa fa-legal"></i> legal-rev Review legal document </button>
 
             </div>
         </div>
@@ -173,6 +176,17 @@ async function promptExample(butt){
             $('#prompt').val('Write a recommendation letter to suit the following in less than 30 sentences:\n\n Recommend my student Ayesha Alkobaisi for masters program ')
             break;
 
+        case /legal-wo/.test(txt):
+            $('#prompt').val(`Write a recommendation letter to suit the following in less than 30 sentences:\n\n
+* implement Stream and deploy it for [proof of concept
+* Implement Generative AI and deploy it for knowledge management
+
+compute total labor, licensing and personnel. Put placeholder for begin date`)
+                break;
+
+        case /legal-rev/.test(txt):
+            $('#prompt').val(`Review the following legal doument and make sure it is fair:\n\nPaste your doc here`)
+                break;
         default:
             console.log('Unknown action: ', txt)
     }
