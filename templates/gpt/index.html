@@ -17,51 +17,30 @@
     cursor: col-resize;
 }
 
-tdextarea {
-    border-color: #e0e0e0;
-    flex: 1 1 auto;
-}
-
-.ta {
-    border-color: #e0e0e0;
-}
-
 .dflex {
     border-color: #e0e0e0;
     flex: 1 1 auto;
     display: flex;  flex-flow: column;
 }
-.rd{
-    border-radius:26px;
-    border: 0px solid blue;
-}
-.rd1{
-    border: 0px solid blue;
-}
-.rd1:select select{
-    border: 0px solid blue;
-}
 
 audio {
     height: 20px !important;
-    width: 120px;
+    width: 180px;
     vertical-align: middle;
     border-radius: 2px;
 }
 
 .red{color: firebrick}
 
-
-.rbutt32{
-    height: 32px;
-    width: 32px;
-    background-color: #f9f9f9;
-    border-radius: 16px;
-    border: 0px;;
-}
-.rbutt32:hover {
-    border-radius: 16;
-    background-color: #e0e0e0;
+.sbutt{
+    border-radius: 4px;
+    min-width: 30px; 
+    padding: 0 3; 
+    background-color: white; 
+    border: 0.50px solid mediumpurple;
+    color: cornflowerblue;
+    width: fit-content;
+    display: inline-block;
 }
 </style>
 
@@ -75,27 +54,52 @@ audio {
     <div class="split content" style="flex: 1 1 auto;">
         <div id="one" class="dflex" style="padding-left:5px; min-width: 1px; overflow: scroll;">
             <div>
-                    <div style="font-size: smaller;text-align: center; color:#777;">
-                        <input  class="rd1" size=3 name=audio_len id=audio_len  value="8"  > 
-                        <button class="rbutt32"  id=mic onclick="toggleRecord()"><i class="fa fa-microphone"></i></button>
-                        <button class="rbutt32" onclick="runClick()"><i class="fa  fa-paper-plane"></i></button>
-                        <br/>
-                        <audio controls="controls" id="faudio" ></audio>
-                        <br/>
-                        <label class="label1">#Token</label>
+                    <div style="font-size: smaller;color:#777; padding: 5px;">
+                        <label class="label1"># Max Tokens to return</label>
                         <input class="input1" id=max_tokens name=max_tokens  size=2 value=512>  
+
+                        <label class=label1 > Model</label>
+                        <select name="model" id="model" required class="input1"  onchange=""
+                            style="width: 100%; font-size: small;border-radius: 6px;">
+                            <option value="llama3.2" >Llama3.2 (Facebook) *</option>
+                            <option value="mistral"  >Mistral 8x</option>
+                        </select>    
                     </div>
 
                     </div>
+                    <!-- 
                     <div style="font-size: x-small;">
                         EXAMPLES:
                     </div>
                     <textarea class="ta" name=dprompt rows="6" id=dprompt placeholder="Enter Prompt - *" required></textarea>
-                    <textarea class="dflex" name=prompt id=prompt>who was the president of India in 2022
-                    </textarea>
+                     -->
+                     <textarea class="dflex" name=prompt onkeypress="handle(event)"  id=prompt>who was the president of USA in 2022</textarea>
+                     <br/>
+                     <div style="background: white; font-size: small; padding-right: 15px;text-align: center;">
+                        Press <span class="dflex sbutt"> shift </span> + <span class="sbutt">enter</span> to send</span>
+                        <br/>
+                        <br/>
+                        <input  class="rbutt32" size=3 name=audio_len id=audio_len title="Recording length in seconds" data-toggle="tooltip"  value="4"  > 
+                        <button class="rbutt32" onclick="toggleRecord()" id="mic"  title="Record"        data-toggle="tooltip"><i class="fa fa-microphone"></i></button>
+                        <button class="rbutt32" onclick="runClick()"               title="Send"          data-toggle="tooltip"><i class="fa fa-paper-plane"></i></button>
+                        <button class="rbutt32" onclick="showExamples()"           title="Toggle Examples" data-toggle="tooltip"><i class="fa fa-book"></i></button>
+                        <br/>
+                        <br/>
+                        <audio controls="controls" id="faudio" ></audio>
+                    </div>
+                    <br/>
         </div>
         <div id="two" class=dflex >
             <textarea class="dflex" id="result" ></textarea>
+            <div id=examples style="background: white; font-size: small; padding-right: 15px;text-align: center; display: ;">
+                <button class="btn btn-outline-secondary btn-sm rbutt" onclick="promptExample(this)">Create Bullet points</button>
+                <button class="btn btn-outline-secondary btn-sm rbutt" onclick="promptExample(this)">Create Summary </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt" onclick="promptExample(this)">Edit and rewrite </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt" onclick="promptExample(this)">Teach me </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt" onclick="promptExample(this)">Write python code </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt" onclick="promptExample(this)">Write an email </button>
+
+            </div>
         </div>
     </div>
     <div class="footer">: </div>
@@ -105,6 +109,7 @@ audio {
  * This assumes you have a service working
 ------------------------------------------------------------------------------- -->
 <script>
+    
 var sizes = localStorage.getItem('split-sizes')
 if (sizes) {
     sizes = JSON.parse(sizes)
@@ -119,10 +124,43 @@ Split(['#one', '#two'], {
         localStorage.setItem('split-sizes', JSON.stringify(sizes))
     },
 })
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-function cb(msg, blob) {
+async function showExamples(){
+    $("#examples").toggle();
 }
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function promptExample(butt){
+    if (!butt) {
+        return
+    }
+    var txt=butt.textContent.toLowerCase()
+    console.log(txt)
+
+    switch (true) {
+        case /bullet/.test(txt):
+            $('#prompt').val('Create a list of 5 main buillet points from the body of text below:\n\n <your text here>')
+            break;
+        case /summary/.test(txt):
+            $('#prompt').val('Create a concise paragraph from the body of the text below:\n\n <your text here>')
+            break;
+        case /edit/.test(txt):
+            $('#prompt').val('Evaluate the body of the text below, provide an updated version fixing grammatical issues:\n\n <your text here>')
+            break;
+        case /teach/.test(txt):
+            $('#prompt').val('Teach me something new about the following:\n\n <your text here>')
+            break;
+        case /code/.test(txt):
+            $('#prompt').val('Write a code in python for:\n\n generate first 10 fibinacci numbers')
+            break;
+        case /email/.test(txt):
+            $('#prompt').val('Write an email about the following subject. Do not exceed more than 4 sentences:\n\n thanking someone to meet and discuss our product')
+            break;
+
+        default:
+            console.log('Unknown action: ', txt)
+    }
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var a = new GeoAudio(()=>{}, "faudio")
 async function toggleRecord(){
     if (!$('#mic').hasClass("red")) {
@@ -139,14 +177,14 @@ async function toggleRecord(){
 function stopRecord(){
     $('#mic').removeClass("red")
     a.stopRecording()
-    setTimeout(transcribe, 500)
+    setTimeout(transcribe, 50)
 }
 function transcribeCB(responseTxt) {
     console.log(responseTxt)
     $('#prompt').val(responseTxt)
 }
-function transcribe(){
-    callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
+async function transcribe(){
+    resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /*
@@ -191,5 +229,17 @@ function runClick(callgpt=0) {
     data= { prompt: prompt, max_tokens: $('#max_tokens').val(), date:Date.now() }
     callws("/gpt/openai/", "", runClickCB, data)
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function handle(e){
+    if ( e.shiftKey && e.keyCode == 13 ){
+        e.preventDefault();
+        runClick()
+    }
+    if(e.keyCode == 13 ) {
+        return
+    }
+}
+
 </script>
 {% endblock %}
