@@ -12,17 +12,20 @@ if (torch.cuda.is_available() ):
 
 
 OLLAMA_HOST= 'http://127.0.0.1:11434/v1'
+OPENAI_KEY = "NO KEY"
 
+sys.path.append(os.path.expanduser("~/.django") )
 if (os.path.exists(os.path.expanduser("~/.django/my_config.py"))):
     import my_config
     try:
         from my_config import OLLAMA_HOST
+        OPENAI_KEY=my_config.OPENAI_KEY
     except:
         pass
 
 client = OpenAI(
     base_url = OLLAMA_HOST,
-    api_key=my_config.OPENAI_KEY
+    api_key  = OPENAI_KEY
 )
 
 OLLAMA = Client(host=OLLAMA_HOST)
