@@ -22,7 +22,7 @@ if (os.path.exists(os.path.expanduser("~/.django/my_config.py"))):
 
 client = OpenAI(
     base_url = OLLAMA_HOST,
-    api_key=my_config.OPENAPI_KEY
+    api_key=my_config.OPENAI_KEY
 )
 
 OLLAMA = Client(host=OLLAMA_HOST)
@@ -44,27 +44,30 @@ def ollma_generate(request=None, model="llama3|mistral", prompt="", stream=True,
 
 #--------------------------------------------------------------------------------------------------------    
 @webapi("/gpt/openai/")
-def openai(request=None, model="llama3.2|mistral", host="", prompt="", messages="", **kwargs):
+def openai(request=None, model="llama3.2|mistral", host="", use_openai="", prompt="", key="", messages="", **kwargs):
 
-    client = OpenAI( base_url = host or OLLAMA_HOST, api_key  = my_config.OPENAPI_KEY )
+    if use_openai or model.startswith('gpt'):
+         host= "https://api.openai.com/v1/"
+    elif not host:
+        host = OLLAMA_HOST
+    
+    client = OpenAI( base_url = host , api_key = key or my_config.OPENAI_KEY )
 
     tmsg = [
                 {"role": "system"    , "content": "You are a helpful assistant."},
-                {"role": "user"      , "content": prompt or "Where was it played?"}
+                {"role": "user"      , "content": prompt or "tell a joke?"}
     ]
     
     messages = messages or tmsg
     model    = model.split("|")[0]
     
-    logger.info(f"{model} : {messages}")
+    logger.info(f"Using host: {host}, {model} : {messages}")
     
     completion = client.chat.completions.create(
-        model = "llama3.2",
+        model = model, #"llama3.2",
         messages= tmsg
         )
 
     ret = completion.choices[0].message
     
     return ret.content
-
-

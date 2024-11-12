@@ -32,6 +32,7 @@ audio {
 
 .red{color: firebrick}
 .redb{color: white; background-color: firebrick;}
+.greenb{color: rgb(235, 242, 49); background-color: green;}
 .green{color: green}
 .yellow{color: khaki; background-color: #222;}
 .blue{color: cornflowerblue}
@@ -55,6 +56,7 @@ audio {
 <script src="/static/geoui/recorder.js"></script>
 <script src="/static/geoui/geoaudio.js"></script>
 
+{% include "websock_chat.html" %}
 {% include "gpt/top.html" %}
 <div class="content fcontainer" style="height: calc(100vh - 80px);">
     <div class="split content" style="flex: 1 1 auto;">
@@ -68,7 +70,11 @@ audio {
                         <select name="model" id="model" required class="input1"  onchange=""
                             style="width: 100%; font-size: small;border-radius: 6px;">
                             <option value="llama3.2" >Llama3.2 (Facebook) *</option>
-                            <option value="mistral"  >Mistral 8x</option>
+                            <option value="gpt-3.5-turbo"  >gpt-3.5-turbo</option>
+                            <option value="gpt-4o"  >gpt-4o</option>
+                            <option value="mistral" >Mistral</option>
+                            <option value="codellama" >Code Llama - for coding</option>
+                            <option value="gemma:2b" >gemma - from google</option>
                         </select>    
                     </div>
 
@@ -98,17 +104,19 @@ audio {
         <div id="two" class=dflex >
             <textarea class="dflex" id="result" ></textarea>
             <div id=examples style="background: white; font-size: small; padding-right: 15px;text-align: center; display: ;">
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm green" onclick="promptExample(this)"><i class="fa fa-list-alt "></i> Create Bullet points</button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm green" onclick="promptExample(this)"><i class="fa fa-check-square"></i>  Create Summary </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp" onclick="promptExample(this)"><i class="fa fa-edit"></i>  Edit and rewrite </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp" onclick="promptExample(this)"><i class="fas fa-chalkboard-teacher"></i> Teach me </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm blue" onclick="promptExample(this)"><i class="fa fa-code"></i>  Write python code </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)"><i class="fa fa-envelope"></i> Write an email </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm red" onclick="promptExample(this)"><i class="fa fa-reply"></i> Respond to an email </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-language"></i> translate text </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-comments"></i> Recommendation Letter </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm redb" onclick="promptExample(this)"><i class="fa fa-legal"></i> legal-wo work order </button>
-                <button class="btn btn-outline-secondary btn-sm rbutt-sm redb" onclick="promptExample(this)"><i class="fa fa-legal"></i> legal-rev Review legal document </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm green"  onclick="promptExample(this)"><i class="fa fa-list-alt ">          </i> Create Bullet points</button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm green"  onclick="promptExample(this)"><i class="fa fa-check-square">       </i>  Create Summary </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp"   onclick="promptExample(this)"><i class="fa fa-edit">               </i>  Edit and rewrite </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm blue"   onclick="promptExample(this)"><i class="fa fa-code">               </i>  Write python code </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm red"    onclick="promptExample(this)"><i class="fa fa-envelope">           </i> Write an email </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm red"    onclick="promptExample(this)"><i class="fa fa-reply">              </i> Respond to an email </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-language">           </i> translate text </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm yellow" onclick="promptExample(this)"><i class="fa fa-comments">           </i> Recommendation Letter </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm redb"   onclick="promptExample(this)"><i class="fa fa-legal">              </i> legal-wo work order </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm redb"   onclick="promptExample(this)"><i class="fa fa-legal">              </i> legal-rev Review legal document </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm greenb" onclick="promptExample(this)"><i class="fa fa-file">               </i> Job description </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm red"    onclick="promptExample(this)"><i class="fa fa-user-shield">           </i> Detect sensitive information </button>
+                <button class="btn btn-outline-secondary btn-sm rbutt-sm purp"   onclick="promptExample(this)"><i class="fas fa-chalkboard-teacher"></i> Teach me </button>
 
             </div>
         </div>
@@ -174,6 +182,14 @@ async function promptExample(butt){
             break;
         case /recommend/.test(txt):
             $('#prompt').val('Write a recommendation letter to suit the following in less than 30 sentences:\n\n Recommend my student Ayesha Alkobaisi for masters program ')
+            break;
+
+        case /job description/.test(txt):
+            $('#prompt').val(`Write a job description for:\n\nAI engineer with experience in GenAI`)
+                break;
+
+        case /sensitive/.test(txt):
+            $('#prompt').val(`detect PII, human trafficking, hate speech, data poisoning attempts, passwords in the and mask it and return text without sensitive information:\n\nmy password is sada1234`)
             break;
 
         case /legal-wo/.test(txt):
@@ -257,7 +273,10 @@ function runClick(callgpt=0) {
     }
     busy()
 
-    data= { prompt: prompt, max_tokens: $('#max_tokens').val(), date:Date.now() }
+    data= { prompt: prompt, 
+            max_tokens: $('#max_tokens').val(), 
+            model : $(model).val()
+        }
     callws("/gpt/openai/", "", runClickCB, data)
 }
 
