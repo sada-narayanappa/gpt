@@ -11,7 +11,7 @@ if (torch.cuda.is_available() ):
     device = "cuda"
 
 
-OLLAMA_HOST= 'http://10.0.0.29:11434/v1'
+OLLAMA_HOST= 'http://127.0.0.1:11434/v1'
 
 if (os.path.exists(os.path.expanduser("~/.django/my_config.py"))):
     import my_config
