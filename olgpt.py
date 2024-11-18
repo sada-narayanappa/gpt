@@ -74,3 +74,21 @@ def openai(request=None, model="llama3.2|mistral", host="", use_openai="", promp
     ret = completion.choices[0].message
     
     return ret.content
+
+#--------------------------------------------------------------------------------------------------------    
+# See: for voice options: https://platform.openai.com/docs/guides/text-to-speech
+# alloy is our default
+@webapi("/gpt/tts/")
+def openai(request=None, text="", voice="alloy", **kwargs):
+    client = OpenAI( api_key = my_config.OPENAI_KEY)
+
+    speech_file_path = "/static/data/tmp/tts.mp3"
+    response = client.audio.speech.create(
+        model="tts-1",
+        speed=0.5,
+        voice=voice,
+        input=text
+    )
+    response.stream_to_file(speech_file_path)
+    
+    return "Your file can be downloaded /static/data/tmp/tts.mp3"
