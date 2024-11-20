@@ -1,0 +1,69 @@
+{% extends "common.html" %}
+{% block content %}
+<!-- -----------------------------------------------------------------------------
+    STYLE
+------------------------------------------------------------------------------- -->
+<style>
+</style>
+<!-- -----------------------------------------------------------------------------
+    HTML
+------------------------------------------------------------------------------- -->
+{% include "gpt/top.html" %}
+{% include "websock_chat.html" %}
+
+<form name="tts">
+    <div class="container box" style ="width: 1024px;" >
+        <br/>
+
+        <h3>Convert text to Speech</h3>
+        <textarea id="prompt" style="height: 60% ; border-radius: 4px; width:100%; border-color: #e0e0e0;" required>
+        </textarea>
+
+        <div>
+            <select name="voice" id="voice" required class="input1"  onchange="" style="font-size: large;border-radius: 6px;">
+                <option value="Alloy" > Alloy  </option>
+                <option value="Echo"  > Echo   </option>
+                <option value="Fable" > Fable  </option>
+                <option value="Onyx"  > Onyx   </option>
+                <option value="Nova"  > Nova   </option>
+                <option value="Simmer"> Simmer </option>
+            </select>
+            
+            <label class=label1 > filename</label> 
+            <input name=fname id=fname  class="input1 rd" value="speech.mp3" data-toggle="tooltip" title="filename prefix" style="width:100%;"> 
+            <button class="btn btn-primary btn-lg"  onclick="handleClick1()">Get it</button>
+        </div>
+        <br/>
+        <a href="https://platform.openai.com/docs/guides/text-to-speech" target="snew"> details</a>
+    </div>
+</form>
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+
+ * This assumes you have a service working
+------------------------------------------------------------------------------- -->
+<script>
+var prompt = ""
+var linesp = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+
+function handleClick1CB(responseTxt, statusTxt, xhr) {
+    nbusy()
+    if (JS_error(responseTxt, statusTxt, xhr, true) ) {
+        return;
+    }
+    var js = JSON.parse(responseTxt)
+    console.log(js)
+    $('#result'  ).val(linesp + prompt + "\n\n" + js.choices[0].text.trim() + "\n" + $('#result'  ).val() )
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function handleClick1() {
+    busy()
+    var url = '/gpt/tts/'
+    prompt = $('#prompt').val().trim()
+    data= { prompt: prompt, max_tokens: $('#max_tokens').val()}
+    var data1 = GET_POSTDATA(data)
+    console.log(url);
+    //callws(url, data1, handleClick1CB)
+}
+</script>
+{% endblock %}
