@@ -1,0 +1,38 @@
+<script>
+    
+function runClickCB(responseTxt, statusTxt, xhr, context, formData) {
+    $('#result'  ).val(responseTxt)
+}
+
+/*
+Ex: 
+'Create a concise paragraph from the body of the text below in 200 words:\n\n 
+
+<your text here>
+    
+'
+*/
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+var defopts= {
+    callBack:runClickCB, 
+    prompt: "", 
+    model: "llama3.2"
+} 
+function callLLM( opts = defopts ) {
+    var data = Object.assign({}, defopts, opts);
+    if (!data.prompt) {
+        return;
+    } 
+    callws("/gpt/openai/", "", data.callBack, data)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function callLLMID(callBack=runClickCB, prompt_inpout=$('#prompt'), model="llama3.2") {
+    prompt = prompt_inpout.val().trim()
+    if (!prompt) {
+        prompt_inpout.effect("shake", { times:3 }, 500);
+        prompt_inpout.focus()
+        return;
+    } 
+    return callLLM(opts={ callBack: callBack, prompt: prompt, model: model})
+}
+</script>

@@ -9,61 +9,94 @@
     HTML
 ------------------------------------------------------------------------------- -->
 {% include "gpt/top.html" %}
-{% include "websock_chat.html" %}
 
-<form name="tts">
+<form id="tts" >
+    {% csrf_token %}
     <div class="container box" style ="width: 1024px;" >
         <br/>
 
-        <h3>Convert text to Speech</h3>
-        <textarea id="prompt" style="height: 60% ; border-radius: 4px; width:100%; border-color: #e0e0e0;" required>
-        </textarea>
+        <h3> <i class="fas fa-volume-up" style="color:lightseagreen;"></i> Text to Speech</h3>
+        <textarea id="prompt" name=prompt style="height: 50% ; border-radius: 4px; width:100%; border-color: #e0e0e0;" required
+        placeholder='Enter text to convert to speech. Seperate the text by  #--- \n to get multiple audio files'></textarea>
 
-        <div>
-            <select name="voice" id="voice" required class="input1"  onchange="" style="font-size: large;border-radius: 6px;">
-                <option value="Alloy" > Alloy  </option>
-                <option value="Echo"  > Echo   </option>
-                <option value="Fable" > Fable  </option>
-                <option value="Onyx"  > Onyx   </option>
-                <option value="Nova"  > Nova   </option>
-                <option value="Simmer"> Simmer </option>
-            </select>
-            
-            <label class=label1 > filename</label> 
-            <input name=fname id=fname  class="input1 rd" value="speech.mp3" data-toggle="tooltip" title="filename prefix" style="width:100%;"> 
-            <button class="btn btn-primary btn-lg"  onclick="handleClick1()">Get it</button>
+        <div class="row">
+            <div class="col-sm-8">
+                <label class=label1 > Voice</label> 
+                <select name="voice" id="voice" required class="input1"  onchange="" style="font-size: large;border-radius: 6px;">
+                    <option value="alloy" > Alloy  </option>
+                    <option value="echo"  > Echo   </option>
+                    <option value="fable" > Fable  </option>
+                    <option value="onyx"  > Onyx   </option>
+                    <option value="nova"  > Nova   </option>
+                    <option value="simmer"> Simmer </option>
+                </select>
+                <!--
+                <label class=label1 > filename prefix</label> 
+                <input name=fname_prefix id=fname_prefix  class="input11 rd" value="speech_*.mp3" data-toggle="tooltip" title="filename prefix" style="width:100%;"> 
+                -->
+                <br/>
+                <br/>
+                <button class="btn btn-primary btn-lg"  onclick="handleClick1()" type="button">Convert</button><br/>
+            </div>
+            <div class="col-sm-4">
+                <br/>
+                <audio id="faudio" controls style="height: 32px;;">
+                    <source src="https://cdn.openai.com/API/docs/audio/alloy.wav">
+                </audio>
+                <div id="audiolist" style="padding-left: 20px;";>
+                </div>
+            </div>
         </div>
-        <br/>
-        <a href="https://platform.openai.com/docs/guides/text-to-speech" target="snew"> details</a>
+        <a style="color: gray; font-size: smaller;" href="https://platform.openai.com/docs/guides/text-to-speech" target="snew"> Click here for details</a>
     </div>
 </form>
 <!-- -----------------------------------------------------------------------------
     SCRIPT
-
- * This assumes you have a service working
 ------------------------------------------------------------------------------- -->
 <script>
 var prompt = ""
 var linesp = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 
 function handleClick1CB(responseTxt, statusTxt, xhr) {
-    nbusy()
     if (JS_error(responseTxt, statusTxt, xhr, true) ) {
         return;
     }
+    console.log(responseTxt)
     var js = JSON.parse(responseTxt)
     console.log(js)
-    $('#result'  ).val(linesp + prompt + "\n\n" + js.choices[0].text.trim() + "\n" + $('#result'  ).val() )
+    var res = ""
+    for (var i in js.files) {
+        var f = js.files[i]
+
+        res += `<button class='btn btn-light' style="font-size: xx-small" onclick='setplay("/${f}")' type=button> 
+            <i class="fa fa-play-circle"></i> &nbsp; ${filename(f)}</button>\n`
+    }
+    $('#audiolist').html(res)
+    saveZZValues()
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function setplay(f, play=1) {
+    console.log(f)
+    //var audio = new Audio(f);
+    //audio.play()
+
+    $("#faudio").attr("src", f);
+    $("#faudio")[0].pause()
+    $("#faudio")[0].load()
+    if (play)
+        $("#faudio")[0].play()
+
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function handleClick1() {
-    busy()
+    $('#prompt').val($('#prompt').val().trim())
+    saveZZValues()
     var url = '/gpt/tts/'
-    prompt = $('#prompt').val().trim()
-    data= { prompt: prompt, max_tokens: $('#max_tokens').val()}
-    var data1 = GET_POSTDATA(data)
-    console.log(url);
-    //callws(url, data1, handleClick1CB)
+    callws(url, "tts", handleClick1CB, )
 }
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    restoreZZValues()
+})
 </script>
 {% endblock %}

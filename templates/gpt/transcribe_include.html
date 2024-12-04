@@ -1,0 +1,163 @@
+<!-- -----------------------------------------------------------------------------
+    STYLE
+------------------------------------------------------------------------------- -->
+<style>
+        .drag_hover0 { border: 2px dashed #ccc; border-radius: 6px;}
+        .drag_hover1 { border: 2px dashed firebrick; }
+</style>
+<!-- -----------------------------------------------------------------------------
+    HTML
+------------------------------------------------------------------------------- -->
+{% include "gpt/llm_utils.html" %}
+<div id="ddxcribe" class=divback>
+
+<form id="formx" >
+    {% csrf_token %}
+    <div class="" style ="width: 100%; text-align: center; align-items: center;" >
+        <h3> <i class="fa fa-pencil-square-o"></i> &nbsp; Transcribe audio/video & summarize </h3>
+        <div id="file_drop"  class="drag_hover0" 
+             style="text-align: center; padding: 24px; width: 100%;"
+            ondragenter="dragenterx()"  
+            ondragover="dragenterx()"  
+            ondragleave="dragleavex()"  
+            ondrop="dragleavex()" 
+        >
+            <div > 
+
+            <input id="file_id" name=file type="file" style="align-content: space-around;" 
+                class="input11 "  onchange=""  accept="*" > 
+
+            <input id=url name=url class="input11" placeholder="URL (youtube link) - Not working!!" style="width: 30%;"> &nbsp; &nbsp;
+
+            <label class="switch" >
+                <input id="force_reload" name="force_reload"  type="checkbox" >
+                <span class="slider"></span>
+            </label>
+            <label  class="">Force</label>
+            </div>
+
+
+            &nbsp; &nbsp; &nbsp; &nbsp; 
+            <br/><br/>
+
+            <div style="height: 80px">
+                <button class="btn btn-outline-secondary btn-sm" onclick="TranscribeVideo()" type="button">
+                    <img id="upimg" style="text-align: center;"  width=64px src="/static/imgs/upload-03.png" /><br/>
+                </button>
+                <br/>
+                <span style="color:#aaa; font-size: smaller;"> Drag and drop audio or video files or use youtube link, URL, or a local file.</span>
+
+            </div>
+            <span style="font-size: smaller; text-align: left;"
+            >
+            </span>
+        </div>
+    </div>
+</form>
+<div id="summary" style="display: none;">
+    <input id=summary_len class="input11" placeholder="Summary length" value="100" /> words
+    <button class="btn btn-outline-secondary" onclick="summarizeText()" type="button">summarize</button>
+    <h6>Summary:</h6>
+    <div id="result" style="max-height: 200px; overflow: auto; text-wrap:pretty;" resizable></div>
+    <hr/>
+<h6>Transcript: <a href="#" onclick="formatTranscription()"> (Click to format text into paragraphs) </a> </h6>
+<div id="result_stats" style="max-height: 200px; overflow: auto; text-wrap:pretty;"></div><br/>
+<div id="result_text" style="height: 200px; overflow: auto; text-wrap:pretty;"></div>
+<hr/>
+<h6>Segments:</h6>
+<div id="result_segs" style="height: 200px; overflow: auto;"></div>
+</div>
+</div>
+
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+------------------------------------------------------------------------------- -->
+<script>
+
+function  dragenterx() {
+    $('#file_drop').addClass('drag_hover1')
+    $('#upimg').attr('src', "/static/imgs/upload-04.png")
+}
+
+function dragleavex() {
+    $('#file_drop').removeClass('drag_hover1') 
+    $('#upimg').attr('src', "/static/imgs/upload-03.png")
+}
+
+function TranscribeVideoCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    if (JS_error(responseTxt, statusTxt, ctx, true) ) {
+        return;
+    }
+    var res = JSON.parse(responseTxt)
+    $('#result_text').html(res[0].trans )
+    $('#result_segs').html("<pre>" + res[0].segs  + "</pre>" )
+    $('#summary').show()
+    //summarizeText()
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function TranscribeVideo() {
+    if ($("#file_id")[0].files.length <= 0 && !$('#url').val() ) {
+        salert("You need to select a file or specify an URL!", 'btn-danger')
+        return
+    }
+    var url = '/scribe/transcribe_media/'
+    callws(url, "formx", TranscribeVideoCB, )
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function summarizeTextCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    if (JS_error(responseTxt, statusTxt, ctx, true) ) {
+        return;
+    }
+    $('#result').html(responseTxt)
+}
+async function computeStatsCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    var p = $('#result_text').text()
+    var nwords = p.trim().split(/\s+/).length;
+    var keys = ""
+    var out = `<b>#chars:</b> ${p.length} ; <b>#words:</b> ${nwords}<br/>
+        <b>Keywords</b> ${responseTxt}
+        `
+    $('#result_stats').html(out)
+}
+
+function formatTranscriptionCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    var r = responseTxt
+    r = r.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    $('#result_text').html( r )
+}
+function formatTranscription() {
+    // Get keywords
+    var p = $('#result_text').text()
+    var m = `Split the following text and make it into paragraphs. Just return the final text without any other information:\n\n ${p}`
+    var opts = {
+        callBack: formatTranscriptionCB,
+        prompt: m, 
+        model: "llama3.2"
+    } 
+    callLLM(opts)
+}
+
+function summarizeText() {
+    var m = $('#summary_len').val()
+    var p = $('#result_text').text()
+    var m = `Create a concise paragraph from the body of the text below in ${m} words. Just return the final text without any other information:\n\n${p}` 
+    var opts = {
+        callBack: summarizeTextCB, 
+        prompt: m, 
+        model: "llama3.2"
+    } 
+    callLLM(opts)
+
+    // Get keywords
+    var m = `find top 5 keywords in the  text below, 
+    just return the list separated by semicolon without any other information:\n\n ${p}`
+    var opts = {
+        callBack: computeStatsCB, 
+        prompt: m, 
+        model: "llama3.2"
+    } 
+    callLLM(opts)
+
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+</script>

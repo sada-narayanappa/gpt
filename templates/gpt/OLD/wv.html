@@ -1,0 +1,108 @@
+
+<script src="/static/node_modules/wavesurfer.js/dist/wavesurfer.min.js"></script>
+<script src="/static/node_modules/wavesurfer.js/dist/plugins/timeline.min.js"></script>
+<script src="/static/node_modules/wavesurfer.js/dist/plugins/regions.min.js"></script>
+
+<br/>
+<h5>Waveform Examples</h5>
+<div id="wv">
+<div id="wvtimeline"></div>
+</div>
+<br/>
+
+<div class="container" >
+        <button class="btn btn-outline-dark btn-sm" id="fetchBlob" onclick="playDuration()">
+            <i class="fa fa-pencil-square-o"></i> Fetch </button>      
+        <div style="display: inline-block;">
+            <label class=label1 >Start</label>
+            <input class="input1" id=a_start size=1  placeholder="Start as " value="0">
+        </div>
+        <div style="display: inline-block;">
+            <label class=label1 >Length (secs)</label>
+            <input class="input1" id=a_len size=1  placeholder="Length " value="10">
+        </div>
+</div>
+
+
+<script>
+
+let regions
+let wavesurfer1
+function createWavesurfer() {
+    regions = WaveSurfer.Regions.create()
+    wavesurfer1 = WaveSurfer.create({
+        container:      "#wv",   
+        waveColor:      'gray',
+        progressColor:  'purple',
+        url:            "/static/gpt/test.wav",
+        plugins: [
+            regions,
+            WaveSurfer.Timeline.create({ container: '#wvtimeline'}  ),
+        ]
+    })
+
+    wavesurfer1.on('click', () => {
+        (wavesurfer1.isPlaying()) ? wavesurfer1.pause(): wavesurfer1.play()
+    })
+}
+
+</script>
+
+
+<script>
+
+
+
+/*
+// Example usage:
+//
+const audioUrl = "your-audio-file-url.mp3";
+isLastTwoSecondsSilent(audioUrl).then(isSilent => {
+    console.log(`Is the last 2 seconds silent? ${isSilent}`);
+}).catch(error => {
+    console.error(error);
+});
+*/
+async function playDuration(start=$('#a_start').val(), len=$('#a_len').val(), rblob=myBlob) {
+    const blob = await a.fetchAudioBlobForRange(start, len, rblob);
+    if (blob) {
+        // You can now use the Blob (e.g., download it, play it, etc.)
+        const url = URL.createObjectURL(blob);
+        //var aud = document.getElementById('faudio');
+        //aud.src=url
+        wavesurfer1.setTime(start)
+
+        //const a = document.createElement('a');
+        //a.href = url;
+        //a.download = 'audio_clip.wav';
+        //a.click();
+        //URL.revokeObjectURL(url);
+
+        /*
+
+        //wavesurfer1.clearMarkers();
+        //wavesurfer1.clearRegions();
+        wavesurfer1.addMarker({ 
+            time: start+len,             
+            label: "speaker-name here", 
+            color: 'hsla(30, 100%, 50%, 1.0)',
+            multiple: false
+        }); 
+        */
+        regions.addRegion({ 
+            start: start,             
+            end: start + len, 
+            color: 'hsla(30, 100%, 50%, 0.20)',
+            multiple: false,
+            loop: true,
+            drag: true,
+            resize: true
+        });
+    }
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    createWavesurfer()
+})
+
+</script>

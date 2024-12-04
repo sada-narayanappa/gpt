@@ -9,7 +9,7 @@ if (os.path.exists("gpt/chatgpt.py")):
     
 
 if (os.path.exists("gpt/whispermod.py")):
-    #from . import whispermod
+    from . import whispermod
     print("whisper Services to be Loaded!")
 
 if (os.path.exists("gpt/olgpt.py")):

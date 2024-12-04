@@ -4,3 +4,7 @@ whisper
 openai
 langchain
 langchain-ollama
+keybert
+pytube
+pyannote-audio 
+torchaudio

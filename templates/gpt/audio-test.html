@@ -1,43 +1,163 @@
-{% extends "common.html" %}
-{% block content %}
-{% include "gpt/top.html" %}
+<div class=divback style="text-align: -webkit-center">
+    <h3> Audio test </h3>
+    <button class="btn btn-outline-dark btn-sm" id="s1" onclick="startRecording ()"><i class="fa fa-microphone"></i></button>
+    <button class="btn btn-outline-success btn-sm" id="s2" onclick="a.toggleRecording()"><i class="fa fa-pause"></i></button>
+    <button class="btn btn-outline-dark btn-sm" id="s3" onclick="stopRecording  ()" ><i class="fa fa-stop"></i></button>
+    <button class="btn btn-outline-dark btn-sm" style="font-size: x-small;" id="s4" onclick="transcribe()" ><i class="fa fa-pencil-square-o"></i> Transcribe </button>
+    <audio class="btn btn-sm"  controls id="faudio" src="/static/gpt/test.wav" style="vertical-align: middle; "  >Your browser does not support the audio element.</audio>
 
-<script src="/static/geoui/recorder.js"></script>
-<script src="/static/geoui/geoaudio.js"></script>
-<style>
-.b {
-    color: red;
-}
-</style>
 
-<button class="a b" id="s1" onclick="a.startRecording ()"><i class="fa fa-microphone"></i> </button>
-<button class="a" id="s2" onclick="a.toggleRecording()"><i class="fa fa-pause"></i> </button>
-<button class="a" id="s3" onclick="a.stopRecording  ()" ><i class="fa fa-stop"></i> </button>
-<button class="a" id="s4" onclick="transcribe  ()" ><i class="fa fa-stop"></i>Transcribe </button>
-<audio controls id="faudio"  >Your browser does not support the audio element.</audio><br/>
-<span id=trans>
-</span>
+    <a href=# id="listen" onclick="listen (1)"><i class="fas fa-assistive-listening-systems"></i></a>
+
+    <br/>
+    
+<viv id=trans>
+</div>
+<br/>
+<br/>
+</div>
 
 <script>
-
-async function cb(msg, blob) {
-    console.log(msg)
-    if ( msg == "stopped") {
-        console.log("TRANSCRIBING ... ")
-        resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
-    }
-}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var a = new GeoAudio(cb, "faudio")
-function transcribeCB(responseTxt) {
-    console.log(responseTxt)
-    $('#trans').text(responseTxt)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function cb(msg, blob) {
 }
-async function startRecord(){
-
+async function stopRecording(){
+    $('#s1').removeClass('btn-danger')
+    a.stopRecording()
+}
+async function startRecording(){
+    $('#s1').addClass('btn-danger')
     a.startRecording()
 }
-async function transcribe(){
-    await a.stopRecording()
+
+async function transcribeCB(responseTxt) {
+    console.log("Got:" , responseTxt.substr(0,64))
+    $('#trans').text(responseTxt)
 }
+async function transcribe(){
+    var ret = await a.stopRecording()
+    console.log("TRANSCRIBING ... ")
+    resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function listen(first=0) {
+    if ( first ) {
+        $('#listen').addClass( "btn btn-success")
+        console.log("==> 1. ", new Date().toISOString()  )
+        a.stopRecording()
+        a.faudio.src= null
+        a.startRecording()
+        setTimeout(listen, 4000)
+        return
+    }
+    var silent = false
+    console.log("==> 2. ", a.faudio.duration , new Date().toISOString()  )
+    try {
+        await a.exportRecording()
+        silent = await isSilent(a.faudio.src, 1)
+        if (silent && a.faudio.duration > 3) {
+            $('#listen').attr("color", "")
+            $('#listen').removeClass( "btn-success")
+            await transcribe()
+            console.log("==> 3. ", a.faudio.duration , new Date().toISOString()  )
+            return
+        }
+    }catch {
+    }
+    console.log("==> 0. ", new Date().toISOString()  )
+    setTimeout(listen, 1000)
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function interimCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    if (JS_error(responseTxt, statusTxt, ctx, true) ) {
+        return;
+    }
+    console.log(responseTxt)
+    var d = JSON.parse(responseTxt)
+    console.log(d.text)
+}
+
+async function interim(start=0, len=60*60, repeat=0) {
+    a.exportRecording()
+    var abbf = await a.getSegment(start, len, myBlob)
+    if (abbf) {
+        await callws('/geoaudio/transcribe/', "", interimCB, {file: abbf } );
+    }
+    if ( repeat ){
+        setTimeout(OnlineTranscribe , 4000, start, len, repeat)
+    }
+}
+var myBlob=null
+function getBlob() {
+    var aud = document.getElementById('faudio');
+    fetch(aud.src)
+        .then(response => response.blob())
+        .then(d => myBlob = d)
+        .then(console.log)
+}
+
+async function getSegment(start=0, len=60*60, blob=null) {
+    var HEADER_LEN = 44
+
+    var abbb = await new Response(blob).arrayBuffer();
+
+    var ab32 = new Uint32Array(abbb.slice(0, HEADER_LEN))   // extract Header
+    var alen = (blob.size - HEADER_LEN)/32000               //audio length in seconds
+
+    var end = start + len
+    end = ( end < 0 || end > alen ) ? Math.floor(alen) : end;
+    len = end - start
+
+    // If blob has less data than the start or if the data is less than 1 second
+    if (blob.size < start || len < 2 ) { 
+        console.log("?? start too large or size too small ", start, end, " <=>", blob.size)
+        return null
+    }
+    console.log("blob:", blob.size, " file size: ", ab32[1], ab32[10], " start: ", start, " end: ", end, alen)
+
+
+    var start_data = start * 32000 + HEADER_LEN
+    var end_data   = end * 32000 + HEADER_LEN
+    end_data   = Math.min( end_data, blob.size-HEADER_LEN);
+
+    var ab08 = new Uint8Array(abbb.slice(start_data, end_data))
+    console.log("====>", start_data, end_data, end_data - start_data, ab08.length)
+
+    ab32[10] = ab08.length
+    ab32[1]  = ab32[10] + 36
+    var h08  = new Uint8Array(ab32.buffer)  // header for new data
+    var h32  = new Uint32Array(ab32.buffer)   // extract Header
+    console.log("====>", ab32[1], ab32[10], h32[1], h32[10])
+
+    var arbf = new Uint8Array(h08.length + ab08.length);
+    arbf.set(h08);
+    arbf.set(ab08, h08.length);
+
+    var abbf = new Blob([arbf], {type: "audio/wav"});
+    var ab32 = new Uint32Array(arbf.slice(0, HEADER_LEN))   // extract Header
+    var alen = (abbf.size - HEADER_LEN)/32000               //audio length in seconds
+
+    console.log("blob:", abbf.size, " file size: ", ab32[1], ab32[10], " start: ", start, " end: ", end, alen)
+    return abbf
+}
+
+var segAudio=null
+async function play(start=0, len=10) {
+    segAudio = await fetchAudioBlobForRange(start,len, myBlob)
+
+    //segAudio =  myBlob
+    const audioUrl = await URL.createObjectURL(segAudio);
+    new Audio(audioUrl).play()
+    
+    //document.getElementById('faudio').src=audioUrl
+
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    getBlob()
+})
+
 </script>
-{% endblock %}

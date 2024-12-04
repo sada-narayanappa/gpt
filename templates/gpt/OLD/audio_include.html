@@ -1,0 +1,347 @@
+<script src="/static/geoui/recorder.js"></script>
+
+<style>
+.rbutt{
+    border-radius: 20px; 
+    height: 40px; 
+    min-width: 40px; 
+    background-color: white; 
+    border: 1px solid mediumpurple
+}
+.sbutt{
+    border-radius: 4px;
+    min-width: 30px; 
+    padding: 3px; 
+    background-color: white; 
+    border: 0.50px solid mediumpurple;
+    color: cornflowerblue
+}
+.audio1{
+}
+.audiodiv{
+    position: fixed; 
+    width: 30px; 
+    bottom: 30; 
+    right: 0; 
+    z-index: 9; 
+    border: 0px solid lightgrey;
+    text-align: center;
+}
+.rbuttr{
+    color: white;
+    background-color: firebrick; 
+}
+.messagebox{
+    right: 0;
+    position: fixed;
+    bottom: 0;
+    width: 400px;
+    height: 500px;
+    border: 2px solid lightgray;
+    border-radius: 12px;
+    display: none;
+    resize:both;
+    overflow: auto;
+}
+</style>
+
+<div id="message" class="messagebox" >
+    <div style="width: 100%; background-color: lightgray; text-align: center; height: 100px;">
+        <h2>Hi there  👋 </h2>How can we help?
+    </div>
+    <div style="width: 100%; background-color: #ececec; text-align: center;padding: 10px;;">
+    <audio controls id="faudio" class="audio1"  src="/static/media/test1.wav" ></audio>
+    <audio controls id="faudio1" class="audio1"></audio>
+    </div>
+    <div id="audio_content"> 
+
+    </div>
+    <div style="width: 100%; background-color: lightgray;position: absolute;bottom: 0px;">
+        <button id="transButton" class="sbutt"  onclick="Transcribe()" ><i class="fa fa-pen" aria-hidden="true"></i> </button>
+        <button id="recButton"   class="sbutt"  onclick="recordClicked()"><i class="fa fa-microphone" aria-hidden="true"></i> </button>
+        <button id="wakeButton"  class="sbutt"  onclick="isWakeClicked()"><i class="fa fa-microphone" aria-hidden="true"></i> </button>
+    </div>
+</div>
+
+<div class="audiodiv draggable">
+    <button id="transButton" class="sbutt"  onclick="openMessage()" ><i class="fa fas fa-comment-alt" aria-hidden="true"></i> </button>
+</div>
+
+
+<script>
+function openMessage() {
+    $('#message').toggle("slide", { direction: "right" } )
+    //recordClicked()
+}
+/*  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Javascripts you can use to record audio and play it back
+
+startRecording
+stopRecording
+pauseRecording
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+var gumStream;      //stream from getUserMedia()
+var rec  = null;    //Recorder.js object
+var input;          //MediaStreamAudioSourceNode we'll be recording
+
+var AudioContext = window.AudioContext || window.webkitAudioContext;
+var audioContext = null //audio context to help us record
+var faudio       = document.getElementById("faudio");
+
+var recordFormat = document.getElementById("record_format")
+var recordButton = document.getElementById("recButton");
+var playButton   = document.getElementById("playButton");
+var pauseButton  = document.getElementById("pauseButton");
+
+//if ( playButton)  { playButton.disabled  = true }
+if ( pauseButton) { pauseButton.disabled = true }
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+var bblob = null
+function recordClicked() {
+    console.log("recordClicked");
+    if (rec && rec.recording) {
+        stopRecording()
+        return
+    } else {
+        startRecording()
+    }
+    recordButton ? $(recButton).addClass("rbuttr"): null;
+}
+
+function startRecording(time=0, callback=null) {
+    var constraints = { audio: true, video:false }
+    bblob = null
+    blobLastIndex = 0
+
+    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+        console.log("getUserMedia() success, stream created, initializing Recorder.js ...");
+
+        config = {sampleRate: 48000}
+        config = {sampleRate: 16000}
+        audioContext = new AudioContext(config);
+
+        var sr = audioContext.sampleRate/1000
+        if (recordFormat) recordFormat.innerHTML="Format: 1 channel pcm @ "+sr+"kHz"
+        gumStream = stream;
+        input = audioContext.createMediaStreamSource(stream);
+
+        rec = new Recorder(input,{numChannels:1})
+        rec.record()
+        if ( time > 0)
+            setTimeout(stopRecording   , time, callback)
+        //setTimeout(InterimAudio    , 3000)
+    }).catch(function(err) {
+        console.log("startRecording");
+    });
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function SetLink(blob) {
+    //console.log("SetLink ...")
+    bblob   = blob;
+    var url = URL.createObjectURL(blob);
+    faudio.src = url
+    
+    if ( playButton)  { playButton.disabled  = false }
+
+}
+function stopRecording(callback=null) {
+    console.log("stop recording ...")
+    rec.stop();
+    rec.exportWAV(callback || SetLink);
+    gumStream.getAudioTracks()[0].stop();
+    recordButton ? $(recordButton).removeClass("rbuttr"): null;
+    //rec.clear();
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function pauseRecording(){
+	if (rec.recording){
+		rec.stop();
+	}else{
+		//resume
+		rec.record()
+	}
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function InterimAudio() {
+    rec.exportWAV(SetLink) // , null, blobLastIndex);
+    if (rec.recording)
+        setTimeout(InterimAudio, 4000)
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function playSegment1(start=null, end=null) {
+    wavesurfer.play(start, end)
+    playSegment1(start, end)
+}
+async function playSegment(start=null, end=null) {
+    var abbf = await getSegment(start, end-start)
+    var url = URL.createObjectURL(abbf);
+    faudio1.src = url
+    faudio1.play()
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Assumes the bblob has wav format
+var HEADER_LEN = 44
+async function getSegment(start=0, len=5*60) {
+    // multiply by 32000 to get index assuming 16000 rate
+    console.log("++++=> ", start, start+len, " <=>", bblob.size)
+
+    end   = (start + len ) * 32000 + HEADER_LEN
+    end   = Math.min( end, bblob.size);
+    start = start * 32000 + HEADER_LEN
+
+    // If bblob has less data than the start or if the data is less than 1 second
+    if (bblob.size < start || (end-start) < 1*32000 ) { 
+        console.log("?? start too large or size too small ", start, end, " <=>", bblob.size)
+        return null
+    }
+
+    var abbb = await new Response(bblob).arrayBuffer();
+    var ab32=new Uint32Array(abbb.slice(0, HEADER_LEN))
+    var len = ab32[1]
+    var alen= ab32[10]
+    end = ( end < 0 || end > alen ) ? alen : end;
+
+    console.log("blob : ", bblob.size, len, alen, " start: ", start, " end: ", end )
+
+    // WAV format has header length of 44:  https://docs.fileformat.com/audio/wav/
+    ab32[10] = end - start
+    ab32[1 ] = ab32[10] + 36
+    var h08  = new Uint8Array(ab32.buffer)
+    var ab08 = new Uint8Array(abbb.slice(start, end))
+
+    var arbf = new Uint8Array(h08.length + ab08.length);
+    arbf.set(h08);
+    arbf.set(ab08, h08.length);
+  
+    var abbf = new Blob([arbf], {type: "audio/wav"});
+    return abbf
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function formatTrans(trans, start=0) {
+    var text = ""
+    var out = ""
+    for (i=0; i < trans.segments.length-1; i++){
+        var v = trans.segments[i]
+        var vs= v.start.toFixed(2) + start
+        var ve= v.end.toFixed(2) + start
+        var at= `<a href='#' onclick='playSegment(${vs}, ${ve})'> ${v.text} </a>`
+        out += `<tr><td>${vs}</td><td>${ve}</td><td>${at}</td></tr>`
+    }
+
+    var v1 = $('#transcript').html() 
+    $('#transcript').html(v1 + `<table>${out}</table>` )
+
+    return out
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+var _lastTranscript = null
+var _lastTransIndex = 0
+function OnlineTranscribeCB( data) {
+    _lastTranscript= JSON.parse(data)
+
+    var segLen = _lastTranscript.segments.length
+    var ltx = ""
+    if ( segLen > 1 ) {
+        var val = _lastTranscript.segments[segLen-2]
+        var ltx = _lastTranscript.segments[segLen-1].text
+        _lastTransIndex = val.end
+    } else{
+        _lastTransIndex = _lastTranscript.segments[0].end
+    }
+
+    var text = _lastTranscript.text
+    text = text.slice(0, text.length-ltx.length)
+
+    console.log(_lastTransIndex,  _lastTranscript  )
+
+    var test = 1
+    if ( test ) {
+        var v1 = $('#result').val() + "\n"
+        $('#result').val(v1 + text )
+    }
+}
+async function OnlineTranscribe( repeat=false) {
+    var abbf = await getSegment(_lastTransIndex, 20)
+    if (abbf) {
+        Transcribe(abbf, _lastTransIndex, [OnlineTranscribeCB])
+    }
+    if ( repeat ){
+        setTimeout(OnlineTranscribe , 4000, repeat)
+    }
+}
+async function getBlobFromAudioSrc() {
+    bblob = await fetch(faudio.src).then(r => r.blob() );
+    return bblob
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function TranscribeAll() {
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function DefaultTranscribeCB(data) {
+    var trans= JSON.parse(data)
+    var v1 = $('#audio_content').html() + "<br/>"
+    var cont= v1 + trans.text
+    $('#audio_content').html(cont )
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+var INPROGRESS    = 0;
+var LAST_TANSTXT  = ""
+async function Transcribe(blob=null, callbacks=null, from=0, duration=-1, detectSpeakers=1) {
+    blob = blob || bblob
+    if ( INPROGRESS ){
+        console.log("Transcribe in progress ...", INPROGRESS)
+        return;
+    }
+    
+    INPROGRESS = new Date()
+
+    let form = new FormData();
+    form.append('file'          , blob );
+    form.append('offset'        , from );
+    form.append('detectSpeakers', detectSpeakers)
+    if (duration> 0)
+        form.append('duration'  , duration )
+
+    let response=fetch("/scribe/stt3/", {
+        method: "post",
+        body: form,
+        headers: { "X-CSRFToken": '{{csrf_token }}' },
+    })
+    .then(response => response.text())
+    .then(data => {
+        _lastTranscript = data
+        if (callbacks) 
+            for (var cb in callbacks)
+            callbacks[cb](data);
+        else
+            DefaultTranscribeCB(data)
+    })
+    .catch(error => {
+        console.log("ERROR; " , error)
+    }).finally( function() {
+        var now = new Date()
+        var diff = now.getTime() - INPROGRESS.getTime()
+        var t1 = INPROGRESS.toTimeString().slice(0,8)
+        var t2 = now.toTimeString().slice(0,8)
+        INPROGRESS = 0
+
+        LAST_TANSTXT =  t1 + " - " + t2 + " : " + diff/1000 + " s: "+ (blob.size -44)/32000;
+
+        if (  document.getElementById("transtime")  ){
+            _lastTranscript = JSON.parse(_lastTranscript)
+            LAST_TANSTXT +=  ": " + _lastTranscript.text
+            $('#transtime').html( LAST_TANSTXT + $('#transtime').html() );
+        }
+        else
+            console.log( LAST_TANSTXT )
+
+    });
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    getBlobFromAudioSrc()
+})
+</script>
