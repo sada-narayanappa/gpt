@@ -1,3 +1,71 @@
+<style>
+.circles {
+  height: 90vmin;
+  position: relative;
+  width: 90vmin;
+  
+  > div {
+    animation: growAndFade 3s infinite ease-out;
+    background-color: dodgerblue;
+    border-radius: 50%;
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+  }
+  
+  .circle1 {
+    animation-delay: 1s;    
+  }
+  .circle2 {
+    animation-delay: 2s; 
+  }
+  .circle3 {
+    animation-delay: 3s;
+  }
+}
+
+@keyframes growAndFade {
+  0% {
+    opacity: .25;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.ripples {
+    align-content: space-around;
+    border: 0px;
+    height: 48;
+    width:  48;
+    border-radius: 50%;
+    animation-delay: 2s;    
+}
+.ripples_active{
+    animation: growAndFadeR 3s infinite ease-out;
+}
+@keyframes growAndFadeR {
+  0% {
+    background-color: rgba(178, 34, 34, 0.1);
+    border: 0 solid rgba(178, 34, 34, 0);
+    transform: scale(1);
+  }
+  50% {
+    background-color: rgba(178, 34, 34, 0.6);
+    border: 1px solid rgba(178, 34, 34, 0.2);
+    transform: scale(0.85);
+  }
+  100% {
+    background-color: rgba(178, 34, 34, 0.1);
+    border: 0 solid rgba(178, 34, 34, 0);
+    transform: scale(1);
+  }
+}
+
+</style>
 <div class=divback style="text-align: -webkit-center">
     <h3> Audio test </h3>
     <button class="btn btn-outline-dark btn-sm" id="s1" onclick="startRecording ()"><i class="fa fa-microphone"></i></button>
@@ -6,8 +74,7 @@
     <button class="btn btn-outline-dark btn-sm" style="font-size: x-small;" id="s4" onclick="transcribe()" ><i class="fa fa-pencil-square-o"></i> Transcribe </button>
     <audio class="btn btn-sm"  controls id="faudio" src="/static/gpt/test.wav" style="vertical-align: middle; "  >Your browser does not support the audio element.</audio>
 
-
-    <a href=# id="listen" onclick="listen (1)"><i class="fas fa-assistive-listening-systems"></i></a>
+    <a type="button" class="ripples"  id="listen" onclick="listen(1)"><i class="fas fa-assistive-listening-systems"></i></a>
 
     <br/>
     
@@ -15,7 +82,6 @@
 </div>
 <br/>
 <br/>
-</div>
 
 <script>
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -44,30 +110,32 @@ async function transcribe(){
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 async function listen(first=0) {
     if ( first ) {
-        $('#listen').addClass( "btn btn-success")
-        console.log("==> 1. ", new Date().toISOString()  )
+        $('#listen').addClass( "ripples_active")
+        //console.log("==> 1. ", new Date().toISOString()  )
         a.stopRecording()
         a.faudio.src= null
         a.startRecording()
-        setTimeout(listen, 4000)
+        setTimeout(listen, 3000)
         return
     }
     var silent = false
-    console.log("==> 2. ", a.faudio.duration , new Date().toISOString()  )
+    //console.log("==> 2. ", a.faudio.duration , new Date().toISOString()  )
     try {
         await a.exportRecording()
         silent = await isSilent(a.faudio.src, 1)
-        if (silent && a.faudio.duration > 3) {
+        if (silent && a.faudio.duration > 2 ) {
             $('#listen').attr("color", "")
-            $('#listen').removeClass( "btn-success")
-            await transcribe()
-            console.log("==> 3. ", a.faudio.duration , new Date().toISOString()  )
+            $('#listen').removeClass( "ripples_active")
+            //silent = await isSilent(a.faudio.src, 1)
+            //console.log("==> 3. ", a.faudio.duration , silent, new Date().toISOString()  )
+            transcribe()
             return
         }
-    }catch {
+    }catch (e) {
+        console.log(e)
     }
-    console.log("==> 0. ", new Date().toISOString()  )
-    setTimeout(listen, 1000)
+    //console.log("==> 0. ", new Date().toISOString()  )
+    setTimeout(listen, 500)
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function interimCB( responseTxt, statusTxt, xhr, ctx, formData) {
