@@ -120,7 +120,7 @@ def openaitts(request=None, prompt="", voice="alloy", fname_prefix="aud_", force
     
     fnames = []
     prompts= []
-    segs = re.split("\\s*\n\\s*#\s*---+.*\n\\s*", prompt, flags=re.MULTILINE)
+    segs = re.split("\\s*\n\\s*#\\s*---+.*\n\\s*", prompt, flags=re.MULTILINE)
     
     for i, s in enumerate(segs):
         s = s.strip();        
@@ -144,4 +144,3 @@ def openaitts(request=None, prompt="", voice="alloy", fname_prefix="aud_", force
     return dict(voice=voice, input=prompts, files=fnames)
 
 #-----------------------------------------------------------------------------------------    
-

@@ -8,3 +8,4 @@ keybert
 pytube
 pyannote-audio 
 torchaudio
+librosa
