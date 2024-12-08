@@ -2,56 +2,41 @@ from mangorest.mango import webapi
 import colabexts
 from colabexts import jcommon
 from pytube import YouTube
-import whisper,  os, datetime, librosa, io, soundfile, sys, hashlib
+import whisper,  os, datetime, librosa, io, soundfile, sys, hashlib, torch
 import threading
 import numpy as np
 
-sys.path.append("../..")
-sys.path.append("..")
-
 model  = None
 device = "cpu"
+#-----------------------------models-----------------------------------------------------------------
+device = "cpu"
+if (torch.cuda.is_available() ):
+    device = "cuda"
+elif torch.backends.mps.is_available():
+    device = "mps"
+#-----------------------------------------------------------------------------------
 mutex  = threading.Lock()
-
 def getmodel():
     global model, mutex
     
     if model is None:
         mutex.acquire()
         if model is None:
-            model = whisper.load_model("base")
+            model = whisper.load_model("base", device=device)
         mutex.release()   
     return model
-
+#-----------------------------------------------------------------------------------
 def transcribe_file(file ="/Users/snarayan/Desktop/data/audio/index.mp4", **kwargs):
     result = getmodel().transcribe(file)
     return result
-
-def splitIntoParas(tr, nLinesPerPara=4):
-    n= nLinesPerPara
-    l=tr.get('segments', [])
-    ret = ""
-    for i,j in enumerate(l[::n]):
-        a, b = i*n, i*n + n
-        o = "".join([j['text'] for j in l[a:b]])
-        ret += o.strip() + "\n\n";
-        #print(f'{a}-{b} {o} \n')
-        
-    return ret
 #-----------------------------------------------------------------------------------
-def who(data, start=0, end=None, **kwargs):
-    try:
-        import scribe.notebooks.speaker as speaker
-        top3, tops = speaker.whoisInAudio1(data, top=3, start=start, end=end, **kwargs  )
-        ret =  { 
-            'top3'    : ";".join(top3[::-1]) ,
-            'topScore': ""+str(tops)
-        }
-    except Exception as e:
-        print("ERROR: " , e)
-        ret = {'top3': ";;", 'topScore': 0}
-
-    return ret
+def is_video_file(filename):
+    video_extensions = [".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv"] 
+    return os.path.splitext(filename)[1].lower() in video_extensions
+#-----------------------------------------------------------------------------------
+def is_audio_file(filename):
+    audio_extensions = [".mp3", ".wav", ".flac", ".ogg", ".aac", ".m4a"] 
+    return os.path.splitext(filename)[1].lower() in audio_extensions
 # ------------------------------------------------------------------------------
 def transcribe(fn, offset=0, duration=60*60, detectSpeakers=1, **kwargs):
     if (type(fn) == str):
@@ -69,8 +54,7 @@ def transcribe(fn, offset=0, duration=60*60, detectSpeakers=1, **kwargs):
 
     return ret
 
-@webapi("/scribe/stt3/")
-def transcribe2(request, **kwargs):
+def transcribeWS(request, **kwargs):
     for f in request.FILES.getlist('file'):
         content = f.read()
 
@@ -78,6 +62,7 @@ def transcribe2(request, **kwargs):
     print(f"Transcribed: {ret}")
     return ret
 
+# ------------------------------------------------------------------------------
 @webapi("/scribe/convert2wav/")
 def convert2wav(request, **kwargs):
     for f in request.FILES.getlist('file'):
@@ -122,14 +107,6 @@ def transcribe_youtube( url = test_url , force_download=False, force_transribe=F
     return transcription;
 
 #--------------------------------------------------------------------------------------------------------    
-def is_video_file(filename):
-    video_extensions = [".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv"] 
-    return os.path.splitext(filename)[1].lower() in video_extensions
-
-def is_audio_file(filename):
-    audio_extensions = [".mp3", ".wav", ".flac", ".ogg", ".aac", ".m4a"] 
-    return os.path.splitext(filename)[1].lower() in audio_extensions
-
 @webapi("/scribe/transcribe_media/")
 def transcribe_media( request, url=None, force_reload="", **kwargs):    
     print(f"{force_reload} <==========")
@@ -170,7 +147,6 @@ def transcribe_media( request, url=None, force_reload="", **kwargs):
                 f.write(results['text'])
             with open(filename_segs, "w") as f:
                 f.write(txt)
-        
     
     # STEP 2: transcribe youtube URL when it works
     
