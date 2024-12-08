@@ -36,35 +36,6 @@
   }
 }
 
-.ripples {
-    align-content: space-around;
-    border: 0px;
-    height: 48;
-    width:  48;
-    border-radius: 50%;
-    animation-delay: 2s;    
-}
-.ripples_active{
-    animation: growAndFadeR 3s infinite ease-out;
-}
-@keyframes growAndFadeR {
-  0% {
-    background-color: rgba(178, 34, 34, 0.1);
-    border: 0 solid rgba(178, 34, 34, 0);
-    transform: scale(1);
-  }
-  50% {
-    background-color: rgba(178, 34, 34, 0.6);
-    border: 1px solid rgba(178, 34, 34, 0.2);
-    transform: scale(0.85);
-  }
-  100% {
-    background-color: rgba(178, 34, 34, 0.1);
-    border: 0 solid rgba(178, 34, 34, 0);
-    transform: scale(1);
-  }
-}
-
 </style>
 <div class=divback style="text-align: -webkit-center">
     <h3> Audio test </h3>
@@ -74,7 +45,7 @@
     <button class="btn btn-outline-dark btn-sm" style="font-size: x-small;" id="s4" onclick="transcribe()" ><i class="fa fa-pencil-square-o"></i> Transcribe </button>
     <audio class="btn btn-sm"  controls id="faudio" src="/static/gpt/test.wav" style="vertical-align: middle; "  >Your browser does not support the audio element.</audio>
 
-    <a type="button" class="ripples"  id="listen" onclick="listen(1)"><i class="fas fa-assistive-listening-systems"></i></a>
+    <a type="button" class="ripples48"  id="listen" onclick="listen(1)"><i class="fas fa-assistive-listening-systems"></i></a>
 
     <br/>
     

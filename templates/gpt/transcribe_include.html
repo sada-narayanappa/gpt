@@ -48,9 +48,7 @@
                 <span style="color:#aaa; font-size: smaller;"> Drag and drop audio or video files or use youtube link, URL, or a local file.</span>
 
             </div>
-            <span style="font-size: smaller; text-align: left;"
-            >
-            </span>
+            <span style="font-size: smaller; text-align: left;"></span>
         </div>
     </div>
 </form>
@@ -58,14 +56,14 @@
     <input id=summary_len class="input11" placeholder="Summary length" value="100" /> words
     <button class="btn btn-outline-secondary" onclick="summarizeText()" type="button">summarize</button>
     <h6>Summary:</h6>
-    <div id="result" style="max-height: 200px; overflow: auto; text-wrap:pretty;" resizable></div>
+    <div id="result" style="max-height: 200px; overflow: auto; text-wrap:pretty; resize: vertical;" ></div>
     <hr/>
 <h6>Transcript: <a href="#" onclick="formatTranscription()"> (Click to format text into paragraphs) </a> </h6>
 <div id="result_stats" style="max-height: 200px; overflow: auto; text-wrap:pretty;"></div><br/>
-<div id="result_text" style="height: 200px; overflow: auto; text-wrap:pretty;"></div>
+<div id="result_text" style="height: 200px; overflow: auto; text-wrap:pretty;resize: vertical;"></div>
 <hr/>
 <h6>Segments:</h6>
-<div id="result_segs" style="height: 200px; overflow: auto;"></div>
+<div id="result_segs" style="height: 200px; overflow: auto; resize: vertical;" ></div>
 </div>
 </div>
 

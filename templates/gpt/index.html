@@ -38,7 +38,7 @@ audio {
 .blue{color: cornflowerblue}
 .purp{color: purple}
 
-.sbutt{
+.sbutt1{
     border-radius: 4px;
     min-width: 30px; 
     padding: 0 3; 
@@ -72,11 +72,12 @@ audio {
                         <select name="model" id="model" required class="input1"  onchange=""
                             style="width: 100%; font-size: small;border-radius: 6px;">
                             <option value="llama3.2" >Llama3.2 (Facebook) *</option>
-                            <option value="gpt-3.5-turbo"  >gpt-3.5-turbo</option>
-                            <option value="gpt-4o"  >gpt-4o</option>
+                            <option value="gpt-3.5-turbo"  >gpt-3.5-turbo (open AI)</option>
+                            <option value="gpt-4o"  >gpt-4o (openai) </option>
                             <option value="mistral" >Mistral</option>
                             <option value="codellama" >Code Llama - for coding</option>
-                            <option value="gemma:2b" >gemma - from google</option>
+                            <option value="gemma:2b" >gemma:2b - from google</option>
+                            <option value="gemma2:27b" >gemma2:27b - from google</option>
                         </select>    
                     </div>
 
@@ -91,17 +92,15 @@ audio {
             <textarea class="dflex" name=prompt onkeypress="handle(event)"  id=prompt>who was the president of USA in 2022</textarea>
             <button class="btn btn-primary rbutt" style="width: 100%;margin-bottom: 10px;;" onclick="runClick()" title="Send"  data-toggle="tooltip"><i class="fa fa-paper-plane"></i></button>
             <div style="background: white; font-size: small; padding-right: 15px;text-align: center;">
-                You may also press <span class="dflex sbutt"> shift </span> + <span class="sbutt">enter</span> to send</span>
-                <br/>
-                <br/>
+                Press <span class="dflex sbutt1"> shift </span> + <span class="sbutt1">enter</span> to send</span>
+                <!--
                 <input  class="rbutt32" size=3 name=audio_len id=audio_len title="Recording length in seconds" data-toggle="tooltip"  value="10"  > 
-                <button class="rbutt32" onclick="toggleRecord()" id="mic"  title="Record"        data-toggle="tooltip"><i class="fa fa-microphone"></i></button>
-                <button class="rbutt32" onclick="showExamples()"           title="Toggle Examples" data-toggle="tooltip"><i class="fa fa-book"></i></button>
-                <br/>
-                <br/>
+                <button class="ripples48" onclick="listen(1)" id="mic" title="Record" data-toggle="tooltip"><i class="fa fa-microphone"></i></button> 
+                -->
+                <a type="button" class="ripples48"  title="Listen to voice command" data-toggle="tooltip" id="listen" onclick="listen(1)"><i class="fas fa-assistive-listening-systems"></i></a>
+                <button class="rbutt32" onclick="showExamples()"  title="Toggle Examples" data-toggle="tooltip"><i class="fa fa-book"></i></button>
                 <audio controls="controls" id="faudio" ></audio>
             </div>
-            <br/>
         </div>
         <div id="two" class=dflex >
             <textarea class="dflex" id="result" ></textarea>
@@ -211,6 +210,7 @@ compute total labor, licensing and personnel. Put placeholder for begin date`)
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var a = new GeoAudio(()=>{}, "faudio")
+/*
 async function toggleRecord(){
     if (!$('#mic').hasClass("red")) {
         $('#mic').addClass("red")
@@ -234,6 +234,45 @@ function transcribeCB(responseTxt) {
 }
 async function transcribe(){
     resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
+}
+*/
+async function transcribeCB(responseTxt) {
+    console.log("Got:" , responseTxt.substr(0,64))
+    $('#prompt').text(responseTxt)
+}
+async function transcribe(){
+    console.log("TRANSCRIBING ... ")
+    resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function listen(first=0, id='#listen') {
+    if ( first ) {
+        $(id).addClass( "ripples_active")
+        //console.log("==> 1. ", new Date().toISOString()  )
+        a.stopRecording()
+        a.faudio.src= null
+        a.startRecording()
+        setTimeout(listen, 3000)
+        return
+    }
+    var silent = false
+    //console.log("==> 2. ", a.faudio.duration , new Date().toISOString()  )
+    try {
+        await a.exportRecording()
+        silent = await isSilent(a.faudio.src, 1)
+        if ( (silent && a.faudio.duration > 2 ) || a.faudio.duration > 10 ) {
+            $(id).attr("color", "")
+            $(id).removeClass( "ripples_active")
+            await a.stopRecording()
+            transcribe()
+            return
+        }
+    }catch (e) {
+        console.log(e)
+    }
+    //console.log("==> 0. ", new Date().toISOString()  )
+    setTimeout(listen, 500, 0, id)
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /*
