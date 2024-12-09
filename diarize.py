@@ -2,6 +2,7 @@
 import os, torch
 from pyannote.audio import Pipeline
 from pathlib import Path
+from mangorest.mango import webapi 
 
 device = "cpu"
 if (torch.cuda.is_available() ):
@@ -70,7 +71,18 @@ if ( path ):
 else:
     print("Model not found")
 # -----------------------------------------------------------------------------
+'''
+Diarize first file sent in
+'''
+@webapi("/scribe/diarize/")
 def diarize(request=None,file="/tmp/test_multiple.wav", nspeakers=None ):
+    if ( request):
+        for f in request.FILES.getlist('file'):
+            content = f.read()
+            file = f"/tmp/{str(f)}"
+            with open(file, "wb") as f:
+                f.write(content)
+    
     diarization = diarizer(file, num_speakers=nspeakers)
     ret = "[\n"
     for segment, _, speaker in diarization.itertracks(yield_label=True):

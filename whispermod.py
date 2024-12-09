@@ -3,31 +3,30 @@ import colabexts
 from colabexts import jcommon
 from pytube import YouTube
 import whisper,  os, datetime, librosa, io, soundfile, sys, hashlib, torch
-import threading
 import numpy as np
 
-model  = None
-device = "cpu"
 #-----------------------------models-----------------------------------------------------------------
 device = "cpu"
 if (torch.cuda.is_available() ):
     device = "cuda"
-elif torch.backends.mps.is_available():
-    device = "mps"
+#elif torch.backends.mps.is_available():
+#    device = "mps"
 #-----------------------------------------------------------------------------------
-mutex  = threading.Lock()
-def getmodel():
-    global model, mutex
+import threading
+mutex        = threading.Lock()
+transcriber  = None
+def getTranscriber():
+    global transcriber, mutex, device
     
-    if model is None:
+    if transcriber is None:
         mutex.acquire()
-        if model is None:
-            model = whisper.load_model("base", device=device)
+        if transcriber is None:
+            transcriber = whisper.load_model("base", device=device)
         mutex.release()   
-    return model
+    return transcriber
 #-----------------------------------------------------------------------------------
 def transcribe_file(file ="/Users/snarayan/Desktop/data/audio/index.mp4", **kwargs):
-    result = getmodel().transcribe(file)
+    result = getTranscriber().transcribe(file)
     return result
 #-----------------------------------------------------------------------------------
 def is_video_file(filename):
@@ -45,7 +44,7 @@ def transcribe(fn, offset=0, duration=60*60, detectSpeakers=1, **kwargs):
         content = io.BytesIO(fn)
         data, sample_rate = librosa.load(content,sr=16000, mono=True, offset=offset, duration=duration)
 
-    ret = getmodel().transcribe(data)
+    ret = getTranscriber().transcribe(data)
     for s in ret.get('segments', []):
         s.pop('tokens')
         if ( detectSpeakers):
@@ -92,7 +91,7 @@ def transcribe_youtube( url = test_url , force_download=False, force_transribe=F
     print( f"File: {file}")
     if (force_transribe or not os.path.exists(file +".txt")):  
         print( f"Calling transcription: {file}.txt")
-        tr = getmodel().transcribe(file)
+        tr = getTranscriber().transcribe(file)
         ret = splitIntoParas(tr)
         with open(file +".txt", "w") as f:
             f.write(ret)
@@ -132,7 +131,8 @@ def transcribe_media( request, url=None, force_reload="", **kwargs):
                     
                 ret.append (dict(file=filename, trans= trans, segs=segs))
             else:
-                ret.append (dict(file=filename, trans=f"{filename}: check back!", segs="??") )
+                msg = f"{filename}: file exists! have you initiated transcribe! click force"
+                ret.append (dict(file=filename, trans=msg, segs="??") )
         else:
             with open(filename, "wb") as f:
                 f.write(content)

@@ -16,7 +16,7 @@
 <br/>
 
 <button class="btn btn-outline-dark btn-sm" id="fetchBlob" onclick="togglePlay()">
-    <i class="fa fa-pencil-square-o"></i> Toggle Play </button>      
+    <i class="fa fa-play"></i> Play/Stop </button>      
 
 <input id="cfile" type="file" style="align-content: space-around;"  class="input11 "  
     onchange="readfile()"  accept="*" > 
@@ -39,6 +39,9 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 let regions
 let wavesurfer1
+let activeRegion = null
+let loopRegion=0
+
 function createWavesurfer() {
     regions = WaveSurfer.Regions.create()
     wavesurfer1 = WaveSurfer.create({
@@ -52,8 +55,26 @@ function createWavesurfer() {
         ]
     })
 
-    wavesurfer1.on('click', togglePlay) 
+
+    regions.on('region-in', (region) => {
+        console.log('region-in', region)
+        activeRegion = region
+    })
+
+    regions.on('region-out', (region) => {
+        console.log('region-out', region)
+        if (activeRegion === region) {
+            if (loopRegion) {
+                activeRegion.play()
+            } else {
+                activeRegion = null
+                //wavesurfer1.pause()
+            }
+        }
+    })
+    //wavesurfer1.on('click', togglePlay) 
 }
+
 function togglePlay() {
     (wavesurfer1.isPlaying()) ? wavesurfer1.pause(): wavesurfer1.play()
 }
@@ -123,7 +144,7 @@ async function playDuration(start=$('#a_start').val(), len=$('#a_len').val(), rb
             end: start + len, 
             color: 'hsla(30, 100%, 50%, 0.20)',
             multiple: false,
-            loop: true,
+            loop: false,
             drag: true,
             resize: true
         });
@@ -164,18 +185,30 @@ temp =[
 {start: 29.89971875, end: 29.96721875, label: 0 },
 ]
 
+temp=[
+{start: 6.730343750000001, end: 7.16909375, label: 1 },
+{start: 7.16909375, end: 7.185968750000001, label: 2 },
+{start: 7.59096875, end: 8.316593750000003, label: 1 },
+{start: 8.316593750000003, end: 9.919718750000001, label: 2 },
+{start: 9.919718750000001, end: 10.93221875, label: 1 },
+{start: 10.45971875, end: 14.745968750000003, label: 2 },
+{start: 10.93221875, end: 10.98284375, label: 0 },
+{start: 14.30721875, end: 17.88471875, label: 0 },
+{start: 18.01971875, end: 21.512843750000002, label: 2 },
+{start: 18.15471875, end: 18.44159375, label: 0 },
+{start: 21.765968750000003, end: 28.49909375, label: 0 },
+{start: 27.85784375, end: 29.96721875, label: 2 },
+]
+
 function getColor(i) {
     color = "hsla(" + i*100  + ", 100%, 50%, 0.20)";
     //for (var i = 0; i < whateverYourValue; i += 1) {
     //    color = "color: hsl(" + i * 10 + ", 50%, 50%)";
     //}
     return color
-    console.log(i, color)
 }
 function addRegion(start, len, i=-1) {
     var color = (i>=0) ? getColor(i) : 'hsla(30, 100%, 50%, 0.20)'
-    console.log(i, color)
-
     regions.addRegion({ 
             start: start,             
             end: start + len, 
