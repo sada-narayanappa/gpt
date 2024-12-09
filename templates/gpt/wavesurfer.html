@@ -1,0 +1,201 @@
+
+<script src="/static/node_modules/wavesurfer.js/dist/wavesurfer.min.js"></script>
+<script src="/static/node_modules/wavesurfer.js/dist/plugins/timeline.min.js"></script>
+<script src="/static/node_modules/wavesurfer.js/dist/plugins/regions.min.js"></script>
+
+<br/>
+<h5>Waveform Examples</h5>
+<div id="wv"   style="border: 2px dotted #de5656;" 
+            ondragenter="$(this).addClass('drag_hover')"  
+            ondragover="$(this).addClass('drag_hover');event.stopPropagation();event.preventDefault();" 
+            ondragleave="$(this).removeClass('drag_hover')" 
+            ondrop="handledrop(event,this)" 
+                >
+<div id="wvtimeline"></div>
+</div>
+<br/>
+
+<button class="btn btn-outline-dark btn-sm" id="fetchBlob" onclick="togglePlay()">
+    <i class="fa fa-pencil-square-o"></i> Toggle Play </button>      
+
+<input id="cfile" type="file" style="align-content: space-around;"  class="input11 "  
+    onchange="readfile()"  accept="*" > 
+
+<div class="container" >
+        <button class="btn btn-outline-dark btn-sm" id="fetchBlob" onclick="playDuration()">
+            <i class="fa fa-pencil-square-o"></i> Fetch </button>      
+        <div style="display: inline-block;">
+            <label class=label1 >Start</label>
+            <input class="input1" id=a_start size=1  placeholder="Start as " value="0">
+        </div>
+        <div style="display: inline-block;">
+            <label class=label1 >Length (secs)</label>
+            <input class="input1" id=a_len size=1  placeholder="Length " value="10">
+        </div>
+</div>
+
+
+<script>
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+let regions
+let wavesurfer1
+function createWavesurfer() {
+    regions = WaveSurfer.Regions.create()
+    wavesurfer1 = WaveSurfer.create({
+        container:      "#wv",   
+        waveColor:      'gray',
+        progressColor:  'purple',
+        url:            "/static/gpt/test.wav",
+        plugins: [
+            regions,
+            WaveSurfer.Timeline.create({ container: '#wvtimeline'}  ),
+        ]
+    })
+
+    wavesurfer1.on('click', togglePlay) 
+}
+function togglePlay() {
+    (wavesurfer1.isPlaying()) ? wavesurfer1.pause(): wavesurfer1.play()
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+//Once the user loads a file in the fileinput, the file should be loaded into waveform
+
+$(document).ready(function() {
+    $('#wv')[0].addEventListener("drop", handledrop, false);
+});
+
+function handledrop(evt, w) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    $(w).removeClass('drag_hover')
+
+    var files1 = evt.dataTransfer.files;  // FileList object.
+    var file=files1[0]
+    readfile(file)
+}
+function readfile(file=null) {
+    if ( !file ){
+        file = $('#cfile')[0].files[0]
+    }
+
+
+    var reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+
+    reader.onload = function (evt) {
+        var blob = new window.Blob([new Uint8Array(evt.target.result)]);
+        wavesurfer1.loadBlob(blob);
+    };
+
+    reader.onerror = function (evt) {
+        alert("An error ocurred reading the file: ", evt);
+    };
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function playDuration(start=$('#a_start').val(), len=$('#a_len').val(), rblob=myBlob) {
+    const blob = await a.fetchAudioBlobForRange(start, len, rblob);
+    if (blob) {
+        // You can now use the Blob (e.g., download it, play it, etc.)
+        const url = URL.createObjectURL(blob);
+        //var aud = document.getElementById('faudio');
+        //aud.src=url
+        wavesurfer1.setTime(start)
+
+        //const a = document.createElement('a');
+        //a.href = url;
+        //a.download = 'audio_clip.wav';
+        //a.click();
+        //URL.revokeObjectURL(url);
+
+        /*
+
+        //wavesurfer1.clearMarkers();
+        //wavesurfer1.clearRegions();
+        wavesurfer1.addMarker({ 
+            time: start+len,             
+            label: "speaker-name here", 
+            color: 'hsla(30, 100%, 50%, 1.0)',
+            multiple: false
+        }); 
+        */
+        regions.addRegion({ 
+            start: start,             
+            end: start + len, 
+            color: 'hsla(30, 100%, 50%, 0.20)',
+            multiple: false,
+            loop: true,
+            drag: true,
+            resize: true
+        });
+    }
+}
+
+var temp= [{'start': 6.754,
+  'end': 7.1659375,
+  'label': 0,
+  'start_sample': 108064,
+  'end_sample': 114655},
+ {'start': 7.65,
+  'end': 17.775,
+  'label': 1,
+  'start_sample': 122400,
+  'end_sample': 284400},
+ {'start': 17.775,
+  'end': 21.6299375,
+  'label': 2,
+  'start_sample': 284400,
+  'end_sample': 346079},
+ {'start': 21.794,
+  'end': 29.9999375,
+  'label': 3,
+  'start_sample': 348704,
+  'end_sample': 479999}
+]
+
+temp =[
+{start: 6.7134687500000005, end: 7.16909375, label: 2 },
+{start: 7.574093750000001, end: 8.316593750000003, label: 0 },
+{start: 8.316593750000003, end: 14.762843750000002, label: 2 },
+{start: 9.852218750000002, end: 11.05034375, label: 0 },
+{start: 14.273468750000003, end: 18.54284375, label: 0 },
+{start: 17.98596875, end: 21.52971875, label: 1 },
+{start: 21.765968750000003, end: 28.60034375, label: 0 },
+{start: 27.79034375, end: 29.96721875, label: 2 },
+{start: 29.89971875, end: 29.96721875, label: 0 },
+]
+
+function getColor(i) {
+    color = "hsla(" + i*100  + ", 100%, 50%, 0.20)";
+    //for (var i = 0; i < whateverYourValue; i += 1) {
+    //    color = "color: hsl(" + i * 10 + ", 50%, 50%)";
+    //}
+    return color
+    console.log(i, color)
+}
+function addRegion(start, len, i=-1) {
+    var color = (i>=0) ? getColor(i) : 'hsla(30, 100%, 50%, 0.20)'
+    console.log(i, color)
+
+    regions.addRegion({ 
+            start: start,             
+            end: start + len, 
+            color: color,
+            multiple: false,
+            loop: true,
+            drag: true,
+            resize: true
+        });
+}
+function addRegions(rgns=temp) {
+    regions.clearRegions()
+    for (var r in rgns ) {
+        r = rgns[r]
+        addRegion(r.start, r.end-r.start, r.label)
+    }
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    createWavesurfer()
+})
+
+</script>

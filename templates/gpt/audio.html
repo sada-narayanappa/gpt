@@ -25,18 +25,18 @@
 
 <div id="tabs" class=tabs style="border: 0px; border-left: 1px solid #f7f7f7">
     <ul>
+        <li><a href="#tabs-wv"      >Wave Surfer</a></li>
         <li><a href="#tabs-scribe"  >Transcribe</a></li>
         <li><a href="#tabs-audio"   >Audio test</a></li>
-        <li><a href="#tabs-test"  >Test</a></li>
     </ul>
     <div id="tabs-scribe"    >
         {% include "gpt/transcribe_include.html" %}
     </div>
     <div id="tabs-audio"    >
         {% include "gpt/audio-test.html" %}
-        {% include "gpt/OLD/wv.html" %}
     </div>
-    <div id="tabs-test"    >
+    <div id="tabs-wv"    >
+        {% include "gpt/wavesurfer.html" %}
     </div>
 
 </div>
