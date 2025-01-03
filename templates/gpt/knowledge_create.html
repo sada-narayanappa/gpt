@@ -1,0 +1,278 @@
+{% extends "common.html" %}
+{% block content %}
+{% include "gpt/top.html" %}
+{% include "gpt/kb_search_include.html" %}
+{% include "gpt/kb_indices_include.html" %}
+
+
+<style>
+input::file-selector-button {
+    border: 1px solid black;
+    border-radius: 12px;
+    background-color: black;
+    color: aliceblue;
+}
+input::file-selector-button:hover{
+    background-color: firebrick;
+}
+
+.drag_hover0 { border: 2px dashed #ccc; border-radius: 6px;}
+.drag_hover1 { border: 2px dashed firebrick; }
+
+.fa-copy-light {
+    font-weight: 900;   
+}
+.fa-copy-light::before {
+    content: url("/static/svg/copy-light.svg");
+    width: 200px;
+    height: 200px;
+}
+
+.label_switch{
+    position: absolute;
+    top: -20;
+    font-size: smaller;
+    text-wrap-mode: nowrap;
+}
+</style>
+
+<!-- -----------------------------------------------------------------------------
+    HTML
+------------------------------------------------------------------------------- -->    
+<div style="padding: 0 0 0 20;">
+    <h1>Knowledge base</h1>
+
+    <div style="width: 60%;">
+    <form id="indexform">
+        <input id="rowid" name="rowid"  value='0' size="3" readonly> &nbsp; 
+
+        <div style="float: right; ">
+            <label class="switch" >
+                <input id="force_reload" name="force_reload"  type="checkbox" >
+                <span class="slider"></span>
+                <label class="label_switch">Reindex</label>
+            </label>
+            <label class="switch" >
+                <input id="vision_index" name="vision_index"  type="checkbox" onchange="setvision(this)">
+                <span class="slider"></span>
+                <label class="label_switch">Vision Index</label>
+            </label>
+        </div>
+
+        <div id="vision-div" 
+            style="display:none; margin-top:10px; min-height:60px; padding: 10px;background-color: rgba(255, 140, 0, 0.64); border-radius: 10px;;">
+            <h6> Vision Index</h6>
+            <p>
+                <li> Currently vision index supports only one index ColQwen2.</li>
+                <li> You may a picka index model: for now it will be ignored!.</li>
+            </p>
+        </div>
+
+        <div id="elastic_connections">
+            <br/>
+            <h5 style="display: inline;"> Elastic Connection (Do not change after creation)</h5>
+            <div class="row"  >
+                <div class="col-sm-4" >
+                    <label class=label1 >ES URL</label> 
+                    <input id="es_url" name="es_url"  class="input1" value='http://localhost:9200' size="4">
+                </div>
+                <div class="col-sm-4" >
+                    <label class=label1 ># ES User</label> 
+                    <input id="es_user"  name="es_user" class="input1" value='elastic' size="4">
+                </div>
+                <div class="col-sm-4" >
+                    <label class=label1 ># ES pass</label> 
+                    <input id="es_pass" name="es_pass"  class="input1" type=password value='elastic' size="4">
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row"  >
+            <div class="col-sm-4" >
+                <label class=label1 ># index-name</label> 
+                <input id="index_name"  name="index_name" class="input1" value='test' size="4" required>
+            </div>
+            <div class="col-sm-8" >
+                <label class=label1 > Foundation Model (Do not change once created)</label>
+                <select name="model" id="model" required class="input1"  onchange=""
+                    style="width: 100%; font-size: small;border-radius: 6px;">
+                    <option value="llama3.2" >Llama3.2 (Facebook) *</option>
+                    <option value="llama3.2-vision"> Llama3.2 Vision </option>
+                    <option value="llama3.2-vision:90b">llama3.2-vision:90b</option>
+                    <option value="granite3-dense:8b">granite3-dense:8b</option>
+                    <option value="gpt-3.5-turbo"  >gpt-3.5-turbo (open AI)</option>
+                    <option value="gpt-4o"  >gpt-4o (openai) </option>
+                    <option value="mistral" >Mistral</option>
+                    <option value="codellama" >Code Llama - for coding</option>
+                    <option value="gemma:2b" >gemma:2b - from google</option>
+                    <option value="gemma2:27b" >gemma2:27b - from google</option>
+                </select>    
+                <button class="rbutt32" type="button"
+                    style="position: absolute; right: 30;"
+                    onclick="geoutils_copyToClipboard('#model')" >
+                            <svg aria-hidden="true" focusable="false" class="octicon octicon-copy" viewBox="0 0 16 16" width="16" height="16" 
+                            fill="currentColor" style="display: inline-block; user-select: none; vertical-align: text-bottom; overflow: visible;">
+                                <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path>
+                            </svg>
+
+                </button>
+            </div>
+        </div>
+
+
+
+
+        <div class="row"  >
+            <div class="col-sm-12" >
+                <label class=label1 > Source Folder</label>
+                <input id="source_folder"  name="source_folder"  class="input1" value='~/data/gpt/<index-name>' size="4">
+            </div>
+        </div>
+
+        <hr style="height: 2px; color: black; background-color: black;"/>
+
+        <div class="row"  >
+            <div class="col-sm-6" >
+                <label class=label1 > Access Groups/Users</label>
+                <textarea   id="access"  name="access" 
+                    style="width: 100%; border-color: #ccc;padding: 8px; font-size: small;"
+                    placeholder="Access Groups/Access users"
+                ></textarea>
+            </div>
+            <div   id="type"  name="type" class="col-sm-6" >
+                <label class=label1 > Type of Docs</label>
+                <textarea 
+                    style="width: 100%; border-color: #ccc;padding: 8px; font-size: small;"
+                    placeholder="Type of docs - extensions allowed"
+                ></textarea>
+            </div>
+        </div>
+        <br/>
+
+
+
+        <button type=button class="btn btn-primary" onclick="saveKB()"> Update </button>      
+        <button type=button class="btn btn-primary" onclick="saveKB('create')"> Create </button>      
+        <button type=button class="btn btn-primary" onclick="deleteKB()"> Delete KB </button>      
+
+
+
+        <br/>
+        <br/>
+        <div id="file_drop"  class="drag_hover0" 
+                style="text-align: center; padding: 24px; width: 100%;"
+            ondragenter="dragenterx()"  
+            ondragover="dragenterx()"  
+            ondragleave="dragleavex()"  
+            ondrop="dragleavex()" 
+            >
+            <div> 
+
+            <input id="file_id" name=file type="file" style="align-content: space-around;" 
+                class="input11 "  onchange=""  accept="*" > 
+
+            </div>
+
+            &nbsp; &nbsp; &nbsp; &nbsp; 
+            <br/><br/>
+
+            <div style="height: 80px">
+                <button class="btn btn-outline-secondary btn-sm" onclick="uploadFiles()" type="button">
+                    <img id="upimg" style="text-align: center;"  width=64px src="/static/imgs/upload-03.png" /><br/>
+                </button>
+                <br/>
+                <span style="color:#aaa; font-size: smaller;"> Drag and drop files to upload.</span>
+
+            </div>
+            <span style="font-size: smaller; text-align: left;"></span>
+        </div>
+
+    </form>
+    </div>
+</div>
+
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+------------------------------------------------------------------------------- -->
+<script>
+
+function  dragenterx() {
+    $('#file_drop').addClass('drag_hover1')
+    $('#upimg').attr('src', "/static/imgs/upload-04.png")
+}
+
+function dragleavex() {
+    $('#file_drop').removeClass('drag_hover1') 
+    $('#upimg').attr('src', "/static/imgs/upload-03.png")
+}
+
+function setvision(w='#vision_index') {
+    if ($(w)[0].checked){
+        $('#vision-div').show()
+        $('#elastic_connections').hide()
+    }
+    else {
+        $('#vision-div').hide()
+        $('#elastic_connections').show()
+    }
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function deleteKBCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    getIndexes()
+}
+function deleteKB(create=0) {
+    data = {}
+    callws("/gpt/deleteKB/", "indexform", deleteKBCB, data)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function saveKBCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    if (ctx.create)
+        getIndexes(-1)
+    else
+        getIndexes($('#rowid').val())
+}
+function saveKB(create=0) {
+    if ( create ) {
+        $('#rowid').val('')
+    }
+    var data = {update: new Date().toISOString(), create: create}
+
+    callws("/gpt/createUpdateKB/", "indexform", saveKBCB, data)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function uploadFilesCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    salert("uploaded files", "btn-success")
+}
+function uploadFiles() {
+    callws("/gpt/uploadFiles/", "indexform", saveCB, data)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function getLLMModelsCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    responseTxt  = responseTxt.replaceAll("NaN", '""')
+    var resp = JSON.parse(responseTxt)
+
+    var ddl = $(ctx.id )
+
+    var opt = ""
+    for (var r in resp) {
+        var v = resp[r]
+        var s = ( v == "llama3.2") || v.startsWith("llama3.2:") ? "selected" : "";
+        s=""
+        opt += `<option value="${v}" ${s}> ${v} </option>\n`
+    }
+    ddl.empty();
+    ddl.html(opt)
+}
+    
+function getLLMModels(id = "#model" ) {
+    ctx = { id: id  }
+    callws("/gpt/getLLMModels/", "", getLLMModelsCB, ctx)
+}
+$(document).ready(function() {
+    getLLMModels()
+})
+</script>
+    
+
+{% endblock %}

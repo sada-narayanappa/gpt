@@ -1,0 +1,154 @@
+<!-- -----------------------------------------------------------------------------
+ INDEX LIST
+------------------------------------------------------------------------------- -->    
+<style>
+.index_list_search {
+    display: none1;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 70%;
+    height: 50%;
+    border: 0px solid rgb(147, 61, 61);
+    border-radius: 6px 6px 0 0;
+    resize:both;
+    overflow: auto;
+    z-index: 40;
+    background: white;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    resize: both;
+}
+.indexSearchToggleDiv{
+    position: absolute; 
+    top: 20%; 
+    right: -20; 
+    z-index: 39; 
+    transform: rotate(-90deg);
+}
+
+.ui-autocomplete {
+  border: 2px solid #ccc; 
+}
+
+
+</style>
+<div id="index_list_search" class="index_list_search fcontainer" resizable draggable>
+    <div class="header" style="padding: 10; background-color: #ccc;" 
+        onmouseenter="$(this).parent().draggable();$(this).parent().draggable('enable')"
+        onmouseleave="$(this).parent().draggable('disable')"
+        >
+        <button class=rbutt32 "
+        onclick="$(this).parent().parent().toggle('slide', {direction: 'right'})"><i class="fa fa-bars"></i>
+        </button>
+
+        <h5 style="display: inline-block;">Search :&nbsp;&nbsp;&nbsp;</h5>
+
+        <textarea id="query"
+                style="width: 100%; border: 0px ; box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px; "
+                rows=2 onkeypress="handle(event)" placeholder="Your query here"
+                onfocus="$(this).autocomplete('search')" required
+                ></textarea>
+        <button class=rbutt32 onclick="searchIndex()"
+                style="position:absolute; top: 50px; right: 10px; ">
+                <i class="fa fa-search"></i>
+        </button>
+
+    </div>
+
+
+
+    <div id="searchresult" class="content" style="background-color: aliceblue;">
+        
+    </div>
+    <div class="footer">
+        Status:
+    </div>
+</div>
+<button class="btn btn-success indexSearchToggleDiv" onclick="$('#index_list_search').fadeToggle()">Search</button>
+
+
+
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+------------------------------------------------------------------------------- -->
+<script>
+
+var _CONTEXT = ""
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function searchIndexCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    //responseTxt  = responseTxt.replaceAll("NaN", '""')
+    //console.log(responseTxt)
+    var resp = JSON.parse(responseTxt)
+    
+    _CONTEXT = ""
+    html = "<table border=1><tr><th>text</th></tr>"
+    for (var r in resp) {
+        var v = resp[r]
+        //var t = v.page_content.replace(/(?:\r\n|\r|\n)/g, '\n<br>');
+        var t = "Source:" + v.metadata.source + "\n\n" + v.page_content; 
+        html += ` <tr><td title='${t}'> 
+                <div>Source: <br/><br/> 
+                    <pre style='text-wrap-mode:wrap;'>${t}</pre>
+                </div></td></tr>\n`
+
+        _CONTEXT += t + "\n\n"
+    }
+    html += "</table>"
+    $('#searchresult').html(html)
+
+    geoutils_copyToClipboard(null,_CONTEXT)
+
+}
+function searchIndex(w = $('#query')) {
+
+    var val = $(w).val().trim()
+    if ( !val) {
+        $(w).effect("shake", { times: 3 }, 500);
+        $(w).focus()
+        return
+    }
+    data = {query: val, k: 10}
+    //callws("/gpt/esSearchIndex/", "indexform", searchIndexCB, data)
+    callws("/gpt/searchKB/", "indexform", searchIndexCB, data)
+    
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function handle(e) {
+    if (e.shiftKey ) { //&& e.keyCode == 13) {
+        e.preventDefault();
+        searchIndex()
+    }
+    if (e.keyCode == 13) {
+        return
+    }
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    //$('#index_list_search').draggable('enable')
+
+})
+let _SEARCH_LIST = [
+        "What is the rotation axis of the solar arrays?",
+        "What is the specific impulse of the LAE?",
+        "What mode is used for Stationkeeping maneuvers?",
+        "which component is attached to cryogenic main core stage (EPC)",
+        "what is diameter of SYLDA5"
+]    
+function getACList(term, params) {
+    //_SEARCH_LIST.unshift(term)
+    let s = new Set(_SEARCH_LIST);
+    _SEARCH_LIST = [...s]
+
+    //console.log(term, params)
+
+    // Lets just keep the top 30 elements only
+    _SEARCH_LIST = _SEARCH_LIST.slice(0, 30);
+    var t= term.toLowerCase()
+    var ret = _SEARCH_LIST.filter(function (str) { return str.toLowerCase().indexOf(t) !== -1; });
+
+    return ret
+}
+geoutils_Autocomplete('#query', getACList, "reg", "")    
+
+</script>
+    

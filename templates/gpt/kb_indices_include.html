@@ -1,0 +1,94 @@
+<!-- -----------------------------------------------------------------------------
+ INDEX LIST
+------------------------------------------------------------------------------- -->    
+<style>
+.index_list {
+    display: none1;
+    right: 0;
+    position: absolute;
+    bottom: 0;
+    width: 27%;
+    height: 50%;
+    border: 0px solid lightgray;
+    border-radius: 6px 6px 0 0;
+    resize:both;
+    overflow: auto;
+    z-index: 40;
+    background: white;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+.indexToggleDiv{
+    position: absolute; 
+    top: 10%; 
+    right: -20; 
+    z-index: 39; 
+    transform: rotate(-90deg);
+}
+
+</style>
+<div id="index_list" class="index_list fcontainer">
+    <div class="header" style="padding: 10; background-color: #b0b8e1;">
+        <button class=rbutt32 "
+        onclick="$(this).parent().parent().toggle('slide', {direction: 'right'})"><i class="fa fa-bars"></i>
+        </button>
+        <h5 style="display: inline-block;">Knowlege bases</h5>
+    </div>
+    <div id="indicies" class="content">
+        
+    </div>
+    <div class="footer">
+        Foot
+    </div>
+</div>
+<button class="btn btn-success indexToggleDiv" onclick="$('#index_list').fadeToggle()">Indices</button>
+
+<!-- -----------------------------------------------------------------------------
+    SCRIPT
+------------------------------------------------------------------------------- -->
+<script>
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+let _INDEXES
+let _ROs = "rowid es_url es_user es_pass name model source_folder"
+function setIndexId(rowid=0, name) {
+    var r = null
+    if (rowid < 0 )
+        r = rec2Json(_INDEXES, 0)
+    else
+        for (var i in _INDEXES.values) {
+            r = rec2Json(_INDEXES, i)
+            if (r.rowid == rowid ) {
+                break
+            }
+        }
+
+    //console.log(rowid, r)
+    callws_setform("indexform", r )
+    setvision()
+    // if we wanted we can make readonly here
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function getIndexesCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    responseTxt  = responseTxt.replaceAll("NaN", '""')
+    var d = JSON.parse(responseTxt)
+    _INDEXES = d
+    var html = "<ul>"
+    for (var i in d.values) {
+        var v  = rec2Json(d, i) 
+        var ri = v.rowid
+        var nm = v.index_name
+        html += `<li><a href=# onclick='setIndexId(${ri}, "${nm}")'> [${i}] &gt;  ${ri} - ${nm} </a></li>`
+    }
+    html += "</ul>"
+    $('#indicies').html(html)
+    setTimeout(setIndexId, 200, ctx.id)
+}
+function getIndexes(id=-1) {
+    callws("/gpt/getKBs/", "", getIndexesCB, {id: id})
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    getIndexes()
+})
+
+</script>
+    

@@ -210,32 +210,6 @@ compute total labor, licensing and personnel. Put placeholder for begin date`)
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var a = new GeoAudio(()=>{}, "faudio")
-/*
-async function toggleRecord(){
-    if (!$('#mic').hasClass("red")) {
-        $('#mic').addClass("red")
-        a.startRecording()
-        var to = parseInt($('#audio_len').val()) * 1000
-
-        setTimeout(stopRecord, Math.min(to, 15*60*1000) )    
-    } else {
-        stopRecord()
-    }
-    
-}
-function stopRecord(){
-    $('#mic').removeClass("red")
-    a.stopRecording()
-    setTimeout(transcribe, 50)
-}
-function transcribeCB(responseTxt) {
-    console.log(responseTxt)
-    $('#prompt').val(responseTxt)
-}
-async function transcribe(){
-    resp = await callws('/geoaudio/transcribe/', "", transcribeCB, {file: a.bblob} );
-}
-*/
 async function transcribeCB(responseTxt) {
     console.log("Got:" , responseTxt.substr(0,64))
     $('#prompt').text(responseTxt)
@@ -274,37 +248,13 @@ async function listen(first=0, id='#listen') {
     //console.log("==> 0. ", new Date().toISOString()  )
     setTimeout(listen, 500, 0, id)
 }
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/*
-respose={
-    "choices": [
-        {
-        "finish_reason": "stop",
-        "index": 0,
-        "logprobs": null,
-        "text": " \n\nMy name is Kaitlyn."
-        }
-    ],
-    "created": 1677042132,
-    "id": "cmpl-6mbYaLDhuWCyoYMmbGrpDqmmCzPPC",
-    "model": "text-davinci-002",
-    "object": "text_completion",
-    "usage": {
-        "completion_tokens": 10,
-        "prompt_tokens": 5,
-        "total_tokens": 15
-    }
-}
-*/
 var prompt = ""
-var linesp = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function runClickCB(responseTxt, statusTxt, xhr, context, formData) {
     nbusy()
 
     $('#result'  ).val(responseTxt)
 }
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function runClick(callgpt=0) {
     prompt = $('#prompt').val().trim()
     if (!prompt) {
@@ -318,9 +268,8 @@ function runClick(callgpt=0) {
             max_tokens: $('#max_tokens').val(), 
             model : $(model).val()
         }
-    callws("/gpt/openai/", "", runClickCB, data)
+    callws("/gpt/llm/", "", runClickCB, data)
 }
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function handle(e){
     if ( e.shiftKey && e.keyCode == 13 ){

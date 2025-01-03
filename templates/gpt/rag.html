@@ -4,94 +4,607 @@
     STYLE
 ------------------------------------------------------------------------------- -->
 <style>
-.rd{
-    height: 50px;
-}    
+.ragsystem {
+    background-color: rgba(236, 197, 197, 0.2);
+    width: 95%;
+    min-height: 40px;
+    border-radius: 4px;
+    padding: 8px 30px;
+    margin-top: 10px;
+    float: right;
+    border-top-left-radius: 6px;
+    font-family: "Google Sans", Sans, Roboto, Arial, sans-serif;
+    font-weight: 400;
+    padding-left: 30px;
+    ;
+    box-shadow1: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px;
 
+}
+
+.raguser {
+    background-color: rgba(193, 224, 242, 0.2);
+    width: 95%;
+    min-height: 40px;
+    border-radius: 4px;
+    padding: 8px 30px;
+    margin-top: 10px;
+    float: left;
+    border-top-left-radius: 6px;
+    font-family: "Google Sans", Sans, Roboto, Arial, sans-serif;
+    font-weight: 300;
+}
+
+.ragblank {
+    background-color: transparent;
+    width: 95%;
+    min-height: 1px;
+    margin-top: 10px;
+    float: right;
+}
+
+.contextdiv {
+    position: fixed;
+    bottom: 150;
+    left: 0;
+    width: 65%;
+    height: 50%;
+    z-index: 100;
+    border: 1px solid #ececec;
+    border-radius: 6px;
+    display: none1;
+    padding: 0px;
+    box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px;
+    padding: 6;
+    background-color: cornflowerblue;
+}
+
+.contextdivButt {
+    position: fixed;
+    top: 50%;
+    left: -30;
+    transform: rotate(270deg)
+}
+
+.ctime {
+    padding: 0 8px;
+    float: right;
+    position: relative;
+    font-size: smaller;
+    top: -10;
+    background-color: inherit;
+    color: rgb(73, 76, 78);
+    border: 0.5px solid rgba(224, 215, 215, 0.6);
+    border-radius: 4px;
+}
+
+
+input::file-selector-button {
+  border: 1px solid black;
+  border-radius: 12px;
+  background-color: black;
+  color: aliceblue;
+  font-size: smaller;
+}
+input::file-selector-button:hover{
+  background-color: firebrick;
+}
 </style>
+
+
 <!-- -----------------------------------------------------------------------------
     HTML
 ------------------------------------------------------------------------------- -->
-{% include "gpt/top.html" %}
-{% include "websock_chat.html" %}
+<script src="/static/geoui/recorder.js"></script>
+<script src="/static/geoui/geoaudio.js"></script>
+<script type="text/javascript" src="/static/bower_components/simplemde/debug/simplemde.js"></script>
+<script type="text/javascript" async
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"> </script>
+<link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css/">
+<link rel="stylesheet" type="text/css" href="/static/bc/Font-Awesome/css/all.css/">
+<!--
+-->
 
-<div class="container box" style ="width: 1024px;" >
 
-<h3>CHAT with GPT</h3>
-    <div>
-        <label class=label1 > </label> 
-        <input name=prompt id=prompt  class="input1 rd" placeholder="Prompt: "  data-toggle="tooltip" title="Prompt" value="what is openAPI" style="width:65%;"> 
-        <input name=prompt id=max_tokens  class="input1 rd" value="512" data-toggle="tooltip" title="# of tokens; max: 4000" style="width:20%;"> 
-        <button class="btn btn-primary rd"  onclick="handleClick1()">Test</button>
-        <button class="btn btn-primary rd"  onclick="handleClick1(1)">GPT</button>
+<div class="fcontainer" style="height: calc(100vh - 60px);font-family: "Google Sans", Roboto, Arial, sans-serif;">
+    <div class="header">
+        {% include "gpt/top.html" %}
+        {% include "gpt/rag_settings.html" %}
+        {% include "websock_chat.html" %}
     </div>
-    <br/>
-    <textarea id="result" style="height: calc(100% - 300px); ; border-radius: 4px; width:100%; border-color: #e0e0e0;">
-    </textarea>
+    <div class="content">
+        <div id=response style="height: 100%;overflow: auto;"> </div>
+    </div>
+    <div class="footer row" style="background-color: transparent; border-top: 2px solid gray;width: calc(100vw - 0px);">
+        <div class="col-sm-9">
+            <textarea id="prompt"
+                style="width: 100%; border: 0px ; box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px; padding: 6;"
+                rows=2 onkeypress="handle(event)" placeholder="What do want to know today" 
+                onfocus="$(this).autocomplete('search')"></textarea>
+            <button class=rbutt32 id=listen onclick="listen(1)"
+                style="position:absolute; top:25%; right: 20; float: right;">
+                <i class="fa fa-microphone"></i></button>
+        </div>
+        <div class="col-sm-3" style="align-content: center;">
+            <div style="padding-bottom: 2px;;">
+                <span class="sbutt"> shift </span>+<span class="sbutt">enter</span> to send </span>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Send" onclick="runClick()">
+                <i class="fa fa-paper-plane"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Clear"
+                onclick="clearLLMChat()">
+                <i class="fa fa-eraser"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Settings"
+                onclick="$('#rag_settings').slideToggle();$(this).blur()">
+                <i class="fa fa-gear"></i>
+            </button>
+            <audio controls="controls" style="width: 100px; height: 20px; display: none1;" id="faudio"></audio>
+
+        </div>
+    </div>
 </div>
+
+<div id="contextdiv" class="contextdiv resizable">
+    <div class="fcontainer">
+        <div class="header">
+            <button class=rbutt32 "
+            onclick="$(this).parent().parent().parent().toggle('slide', {direction: 'left'})"><i class="fa fa-bars"></i>
+            </button> &nbsp;&nbsp;&nbsp;&nbsp;
+            <h5 style="display: inline-block;">Context </h5> &nbsp;  &nbsp; &nbsp; &nbsp;
+            <input id="file_id" name=file type="file" style="align-content: space-around; border: 0px;" 
+                onchange="handleFileSelect(this, '#context')" accept="*" >
+        </div>
+        <div class="content">
+            <div id="context" 
+            style="width: 100%; height: 100%;background: #fff; font-size:medium; overflow: auto; text-wrap: auto;" 
+            contenteditable=true editable onPaste="setTimeout(adjustImage,1000, 'clear')">
+This is just a sample context. <br/>
+Cut and paste a context of your choice or drop a file.<br/><br/>
+
+1. Renewable energy is energy from natural sources that are replenished at a 
+    faster rate than they are consumed.<br/>
+2. Solar energy is one of the most popular forms of renewable energy.<br/>
+3. Wind energy is harnessed using turbines to generate electricity.<br/>
+4. Hydropower relies on the flow of water to generate energy.<br/>
+5. Renewable energy reduces greenhouse gas emissions and helps 
+    combat climate change.   
+    <br/>
+            </div>
+        </div>
+        <div class="footer" id="contextFooter" style="background-color: #ccc;">
+            Stats
+        </div>
+    </div>
+</div>
+<button class="btn btn-success btn-sm contextdivButt" data-toggle="tooltip" title="Context"
+onclick="$('#contextdiv').toggle('slide', {direction: 'left'});$(this).blur()">
+<i class="fa fa-history"></i> Context
+</button>
+
+<script>
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$('#context')[0].addEventListener("wheel", function(event) {
+    // Zoom in or out based on the scroll direction
+    let direction = event.deltaY > 0 ? -1 : 1;
+    zoomImage(direction);
+});
+
+let currentZoom = 1
+
+function zoomImage(direction, minZoom =1, maxZoom=5, stepSize=0.1){
+    var imgTAG = $('#context').find("img")
+    if (imgTAG.length <= 0) {
+        return
+    }
+
+    let newZoom = currentZoom + direction * stepSize;
+
+    // Limit the zoom level to the minimum and maximum
+    // values
+    if (newZoom < minZoom || newZoom > maxZoom) {
+        return;
+    }
+
+    currentZoom = newZoom;
+
+    // Update the CSS transform of the image to scale it
+    imgTAG[0].style.transform = "scale(" + currentZoom + ")";
+}
+
+function webpToPng(webpDataURL) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      webpDataURL = resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = webpDataURL;
+  });
+}
+
+function adjustImage(call='') {
+    console.log("Adjusting Image ...")
+    var imgTAG = $('#context').find("img")
+    if (imgTAG.length <= 0) {
+        return
+    }
+
+    if ( imgTAG[0].src.substring(0,15).indexOf("webp") > 0) {
+        webpToPng(imgTAG[0].src).then(pngDataURL => {
+            // Use the pngDataURL as needed
+            imgTAG[0].src = pngDataURL;
+        })
+        .catch(error => {
+            console.error('Error converting WebP to PNG:', error);
+        });
+    } else if (imgTAG[0].src.startsWith("http")) {
+        var reader = new FileReader();
+        reader.readAsDataURL(imgTAG[0].src);
+        reader.onload = function (e) {
+            //console.log(file, file.type)
+            imgTAG[0].src = e.target.result
+        };
+    }
+
+    var w = imgTAG.width()
+    var h = imgTAG.height()
+    if (w > h) {
+        imgTAG.attr("width", "80%")
+    } else {
+        imgTAG.attr("height", "80%")
+    }
+    clearLLMChat()
+
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function previewImageFile(file, results) {
+    var reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (e) {
+        //console.log(file, file.type)
+        $(results).html(`<img style="display: block;margin: auto;" 
+            src='${e.target.result}'/>`);
+        adjustImage()
+    };
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function handleFileSelect(fileControl, resultsDIV="#context") {
+    if (!resultsDIV || fileControl.files.length <= 0)
+        return;
+
+    var file = fileControl.files[0];
+    //console.log(file, file.type)
+    if (file.type.indexOf("image") >= 0) {
+        previewImageFile(file, resultsDIV);
+    } else if(file.type.indexOf("video") >= 0) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (e) {
+            $(resultsDIV).html(`<video width=99% controls><source src='${e.target.result}'></video>`)
+        };
+
+    } else if(file.type.indexOf("audio") >= 0) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (e) {
+            $(resultsDIV).html(`<audio controls><source src='${e.target.result}'></audio>`)
+        }
+    } else {
+        setContext(file)
+    } 
+    clearLLMChat()
+}
+function setContextCB(responseTxt, statusTxt, xhr, context, formData) {
+    if ( responseTxt.toLowerCase().indexOf("<table") >= 0) {
+        str= responseTxt
+    } else {
+        str = responseTxt.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    }
+
+    $('#context').html(str )
+    var status = `#chars: ${responseTxt.length} file: ${context.name}`
+    $('#contextFooter').html(status)
+}
+function setContext(file) {
+    callws('/gpt/extractText/', "", setContextCB, { file: file, name: file.name });
+}
+</script>
 <!-- -----------------------------------------------------------------------------
     SCRIPT
-
- * This assumes you have a service working
 ------------------------------------------------------------------------------- -->
 <script>
-/*
-respose={
-    "choices": [
-        {
-        "finish_reason": "stop",
-        "index": 0,
-        "logprobs": null,
-        "text": " \n\nMy name is Kaitlyn."
-        }
-    ],
-    "created": 1677042132,
-    "id": "cmpl-6mbYaLDhuWCyoYMmbGrpDqmmCzPPC",
-    "model": "text-davinci-002",
-    "object": "text_completion",
-    "usage": {
-        "completion_tokens": 10,
-        "prompt_tokens": 5,
-        "total_tokens": 15
-    }
-}
-*/
 var prompt = ""
-var linesp = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-
-function handleClick1CB(responseTxt, statusTxt, xhr) {
-    nbusy()
-    if (JS_error(responseTxt, statusTxt, xhr, true) ) {
-        return;
-    }
-    var js = JSON.parse(responseTxt)
-    console.log(js)
-    $('#result'  ).val(linesp + prompt + "\n\n" + js.choices[0].text.trim() + "\n" + $('#result'  ).val() )
-}
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-function handleClick1(callgpt=0) {
-    busy()
-    var url = (!callgpt) ? '/gpt/testgpt/': '/gpt/callgpt/'
-    prompt = $('#prompt').val().trim()
-    if (prompt == "") {
-        JS_error("Please enter a prompt", "error", "")
-        $('#prompt').effect("shake", { times:3 }, 500);
-        $('#prompt').focus()
-        nbusy()
-        return;
-    }
-    data= { prompt: prompt, max_tokens: $('#max_tokens').val()}
-    var data1 = GET_POSTDATA(data)
-    console.log(url);
-    $.post(url, data1, handleClick1CB)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function clearLLMChat() {
+    $('#response').html("")
+    promptHistory = []
+    _IN_PROGRESS = false
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-function TranscribeCB1(data) {
-    var val = JSON.parse(data)
-    console.log( val )
-    //var v1 = $('#prompt').val() + "\n"
-    $('#prompt').val(val.text )
+var _geoAudio = new GeoAudio(() => { }, "faudio")
+async function transcribeCB(responseTxt) {
+    //console.log("Got:", responseTxt.substr(0, 64))
+    $('#prompt').val(responseTxt)
 }
-    
+async function transcribe() {
+    console.log("TRANSCRIBING ... ")
+    resp = await callws('/geoaudio/transcribe/', "", transcribeCB, { file: _geoAudio.bblob });
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+async function listen(first = 0, id = '#listen') {
+    if (first) {
+        $(id).addClass("ripples_active")
+        $(id).blur()
+        //console.log("==> 1. ", new Date().toISOString()  )
+        _geoAudio.stopRecording()
+        _geoAudio.faudio.src = null
+        _geoAudio.startRecording()
+        setTimeout(listen, 3000)
+        return
+    }
+    var silent = false
+    //console.log("==> 2. ", a.faudio.duration , new Date().toISOString()  )
+    try {
+        await _geoAudio.exportRecording()
+        silent = await isSilent(_geoAudio.faudio.src, 1.5)
+        if ((silent && _geoAudio.faudio.duration > 2) || _geoAudio.faudio.duration > 10) {
+            $(id).attr("color", "")
+            $(id).removeClass("ripples_active")
+            await _geoAudio.stopRecording()
+            transcribe()
+            return
+        }
+    } catch (e) {
+        console.log(e)
+    }
+    //console.log("==> 0. ", new Date().toISOString()  )
+    setTimeout(listen, 1000, 0, id)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function handle(e) {
+    if (e.shiftKey && e.keyCode == 13) {
+        e.preventDefault();
+        runClick()
+    }
+    if (e.keyCode == 13) {
+        return
+    }
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+var RAG_SYS_PROMPT = `You are a knowledgeable AI assistant who answers a question from the context below. 
+Given the following sections from the topic,
+generate a final answer. Base your answer exclusively on the information.
+If the context does not fully answer the query, do not make up an answer.
+If the answer is unknown, indicate as such without attempting to fabricate a response.
+Answer the question with as much detail as possible using the sources.
+
+context: 
+
+`
+
+var promptHistory = []
+
+function runClickCB(responseTxt, statusTxt, xhr, context, formData) {
+    _IN_PROGRESS = false;
+    promptHistory.push({ role: 'assistant', content: responseTxt })
+
+    addToReponse(0, responseTxt)
+}
+
+/*
+    We construct a messages and send it over to LLM
+
+{"role": "system", "content": "You are ExploreAI, an outdoorsman's expert assistant."},
+{"role": "user", "content": "What's the tallest mountain in the world?"},
+{"role": "assistant", "content": "The tallest mountain in the world is Mount Everest, which reaches approximately 29,029 feet above sea level."},
+{"role": "user", "content": "How does its height compare to the second tallest?"},
+
+*/
+var _IN_PROGRESS
+
+var VISION_PROMPT = 
+`You are a helpful Vision Language assistant. You will be provided with a question and an image URL. 
+Your knowledge is solely based on the content of the image provided.
+
+ 1. **Understanding the Question**: Use the tag <understand> to interpret what the question is asking based on the image.
+ 2. **Performing Actions**: If an action is required to answer the question, use the <action> tag to perform the necessary operations such as 
+    <count>, <sum>, <subtract>, <multiply>, etc.
+ 3. **Providing the Answer**: Use the <answer> tag to give your response based on the information processed 
+    under the <understand> and <action> tags (if applicable).
+   
+    The user will now ask a question:
+
+`
+
+
+
+function runClick(callgpt = 0) {
+    if (_IN_PROGRESS) {
+        salert("A call already in progress!", "btn-danger")
+        return
+    }
+    //_IN_PROGRESS = true
+    var prompt = $('#prompt').val().trim()
+    if (!prompt) {
+        $('#prompt').effect("shake", { times: 3 }, 500);
+        $('#prompt').focus()
+        return;
+    }
+
+    var URL   = "/gpt/llm/"
+    var model = $('#model').val()
+
+    var imgTAG = $('#context').find("img")
+
+    if ( imgTAG.length > 0) {
+        if (model.toLowerCase().indexOf("vision") <= 0 )
+            model = "llama3.2-vision"
+        URL   = "/gpt/llmVision/"
+    }
+
+    if (promptHistory.length <= 0) {   // This is the first message
+        if ( imgTAG.length > 0){
+            var imgCtx = imgTAG[0].src
+            var comma  = imgCtx.indexOf(",")
+            imgCtx = imgCtx.substring(comma+1)
+            promptHistory.push({ role: 'system', content: VISION_PROMPT})
+            promptHistory.push({ role: 'user', content: prompt, images: [imgCtx]})
+        }   
+        else {
+            promptHistory.push({ role: 'system', content: RAG_SYS_PROMPT + $('#context').text() })
+            promptHistory.push({ role: 'user', content: prompt })
+            promptHistory.push({ role: 'user', content: prompt })
+        }
+    } else {
+        promptHistory.push({ role: 'user', content: prompt })
+    }
+    addToReponse(1, prompt)
+
+    data = {
+        messages: JSON.stringify(promptHistory), model: model,
+    }
+    console.log("model", model )
+    callws(URL, "", runClickCB, data)
+    saveZZValues()
+    _SEARCH_LIST.unshift(prompt)
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    This will run the search  => usually done once at the beginning of inquiry
+*/
+var _IN_PROGRESS
+function runSearchAndGetContext(callgpt = 0) {
+    if (_IN_PROGRESS) {
+        salert("A call already in progress!", "btn-danger")
+        return
+    }
+    _IN_PROGRESS = true
+    var prompt = $('#prompt').val().trim()
+    if (!prompt) {
+        $('#prompt').effect("shake", { times: 3 }, 500);
+        $('#prompt').focus()
+        return;
+    }
+
+    data = {
+        query: prompt
+    }
+    callws("/gpt/search/", "", runClickCB, data)
+    saveZZValues()
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+let simplemde = new SimpleMDE({ element: null });
+function addToReponse(user = 0, msg = "Random Message\ntwo lines\none more") {
+    var c = $('#response').html()
+
+    // Current Time
+    var ct = new Date().toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3");
+    var wg = ` 
+<button class=rbutt32 onclick='copyToClipboard(this)' ><i class="fa fa-copy"></i></button>
+<button class=rbutt32 onclick='upvote(this)'      ><i class="fa fa-thumbs-up"></i></button>
+<button class=rbutt32 onclick='downvote(this)'    ><i class="fa fa-thumbs-down"></i></button>
+<!-- <button class=rbutt32 onclick="renderMDE(this)"   ><i class="fab fa-markdown"></i></button> -->
+<button class=rbutt32 onclick="mathJax(this)"     ><i class="fa fa-subscript"></i></button>
+<button class=rbutt32 onClick="makeEditable(this)"><i class="fa fa-edit"></i></button>
+`
+
+    var rc = ""
+    if (user) {
+        var ct = "<span class=ctime> " + ct + "</span>"
+        var msg2 = "<span class=chatContent> " + msg.replace(/\n/gm, "<br/>") + "</span>"
+
+        rc = c + "<div class='raguser'> " + ct + msg2 + "</div>"
+    } else {
+        var ct = "<span class=ctime> " + ct + wg + "</span>"
+
+        var msg2 = simplemde.markdown(msg);
+        //var msg2= "<span class=chatContent> " + msg.replace(/\n/gm,"<br/>") + "</span>"
+        //var msg2  = msg;
+        rc = c + "<div class='ragsystem'> " + ct + "<br/>" + msg2 + "</div> <div class='ragblank'>.</div>"
+
+    }
+    $('#response').html(rc)
+    $('#response')[0].scrollTop = $('#response')[0].scrollHeight + 150;
+    //setTimeout(500, geoui_setupMATHJAX, '#response')
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function copyToClipboard(w) {
+    $(w).blur()
+    var textToCopy = $(w).parent().parent().text()
+
+    // Create a temporary textarea element
+    var tempTextArea = $("<textarea>");
+    tempTextArea.val(textToCopy).appendTo("body");
+    tempTextArea.select();
+    document.execCommand("copy");
+    tempTextArea.remove();
+
+    //console.log(textToCopy)
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+let WWW = null
+function renderMDE(w) {
+    $(w).blur()
+    WWW = w
+    console.log(WWW)
+    var ww = $(w).parent().parent()
+    var wText = $(ww).find('chatContent').text()
+    var mt = simplemde.markdown(wText);
+    $(ww).find('chatContent').html(mt)
+}
+
+function mathJax(w) {
+    $(w).blur()
+    WWW = w
+    var ww = $(w).parent().parent()
+    geoui_setupMATHJAX(ww)
+}
+function makeEditable(w) {
+    $(w).blur()
+    var ww = $(w).parent().parent()
+    $(ww)[0].contentEditable = true;
+    $(ww).focus()
+    $(ww).css('background', 'rgba(236, 197, 197, 0.5)')
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function upvote(w) {
+    $(w).blur()
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function downvote(w) {
+    $(w).blur()
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function () {
+    //btnBlur()
+})
+
+let _SEARCH_LIST = [
+        "What is the rotation axis of the solar arrays?",
+        "What is the specific impulse of the LAE?",
+        "What mode is used for Stationkeeping maneuvers?",
+]    
+function getACList(term, params) {
+    //_SEARCH_LIST.unshift(term)
+    let s = new Set(_SEARCH_LIST);
+    _SEARCH_LIST = [...s]
+
+    //console.log(term, params)
+
+    // Lets just keep the top 30 elements only
+    _SEARCH_LIST = _SEARCH_LIST.slice(0, 30);
+    var t= term.toLowerCase()
+    var ret = _SEARCH_LIST.filter(function (str) { return str.toLowerCase().indexOf(t) !== -1; });
+
+    return ret
+}
+geoutils_Autocomplete('#prompt', getACList, {position: "top"})    
+
+
 </script>
 {% endblock %}

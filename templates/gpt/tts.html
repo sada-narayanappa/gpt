@@ -16,7 +16,7 @@
         <br/>
 
         <h3> <i class="fas fa-volume-up" style="color:lightseagreen;"></i> Text to Speech</h3>
-        <textarea id="prompt" name=prompt style="height: 50% ; border-radius: 4px; width:100%; border-color: #e0e0e0;" required
+        <textarea id="ttsprompt" name=ttsprompt style="height: 50% ; border-radius: 4px; width:100%; border-color: #e0e0e0;" required
         placeholder='Enter text to convert to speech. Seperate the text by  #--- \n to get multiple audio files'></textarea>
 
         <div class="row">
@@ -89,7 +89,7 @@ function setplay(f, play=1) {
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function handleClick1() {
-    $('#prompt').val($('#prompt').val().trim())
+    $('#ttsprompt').val($('#ttsprompt').val().trim())
     saveZZValues()
     var url = '/gpt/tts/'
     callws(url, "tts", handleClick1CB, )

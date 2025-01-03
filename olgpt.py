@@ -1,7 +1,7 @@
-import sys, os, ollama, torch, logging,datetime, httpx,re, hashlib
+import sys, os, torch, logging,datetime, httpx,re, hashlib, json, base64
+import ollama
 from ollama import Client
 from mangorest.mango import webapi
-sys.path.append(os.path.expanduser("~/.django") )
 from openai import OpenAI
     
 logger = logging.getLogger( "geoapp" )
@@ -9,7 +9,8 @@ logger = logging.getLogger( "geoapp" )
 device = "cpu"
 if (torch.cuda.is_available() ):
     device = "cuda"
-
+elif torch.backends.mps.is_available():
+    device = "mps"
 
 OLLAMA_HOST= 'http://127.0.0.1:11434/v1'
 OPENAI_KEY = "NO KEY"
@@ -39,7 +40,6 @@ def is_host_reachable(host, timeout=0.1):
     except OSError as e:
         print("OS error: {0}".format(e))
         return False
-        
     
 if ( not os.environ.get('http_proxy','') or not is_host_reachable(os.environ['http_proxy']) ):
     proxies = None
@@ -76,11 +76,52 @@ def ollma_generate(request=None, model="llama3|mistral", prompt="", stream=True,
         
     logger.debug(ret)
     return ret
+#-------------------------------------------------------------------------------------------    
+def tob64(imageFile):
+    with open(imageFile, "rb") as f:
+        b64Image = base64.b64encode(f.read()).decode("utf-8")
+    return b64Image
+
+@webapi("/gpt/llmVision/")
+def llmVision(request=None, model="llama3.2-vision|llama3.2-vision:90b", 
+                file="", messages=None, prompt="", **kwargs):
+
+    OLLAMA = Client(host=OLLAMA_HOST)
+    if ( request and not file and not messages):
+        for f in request.FILES.getlist('file'):
+            context = f.read()
+            #fileIO = io.BytesIO(content)
+            file = f"/tmp/{str(f)}"
+            with open(file, "wb") as f:
+                f.write(context)
+            #context = open(file, "rb").read()
+            #context = tob64(file)      
+            break;      
+    elif(not messages):
+        #file  = "/tmp/people.jpg"
+        #q = "what is in this image"
+        context = open(file, "rb").read()
+        #context = tob64(file)
+        messages= [ 
+            dict(role="user", content=prompt, images=[context])
+        ]
+    else:
+        if ( type(messages) == str) :
+            messages = json.loads(messages)
+
+    #print(messages)
+    resp = ollama.chat( model= model, messages=messages)
+
+    return resp.message.content
 
 #-------------------------------------------------------------------------------------------    
 @webapi("/gpt/openai/")
-def openaicall(request=None, model="llama3.2|mistral", host="", use_openai="", prompt="", 
-                key="", messages="", **kwargs):
+def openaicall(**kwargs):
+    return llm(**kwargs)
+
+@webapi("/gpt/llm/")
+def llm(request=None, model="llama3.2|mistral", host="", use_openai="", prompt="", 
+                key="", messages="", temp=None, max_tokens=None, top_p=None, **kwargs):
 
     if use_openai or model.startswith('gpt'):
          host= "https://api.openai.com/v1/"
@@ -92,21 +133,47 @@ def openaicall(request=None, model="llama3.2|mistral", host="", use_openai="", p
                 {"role": "system"    , "content": "You are a helpful assistant."},
                 {"role": "user"      , "content": prompt or "tell a joke?"}
     ]
+
+    if (not messages):
+        messages = tmsg
+
+    if ( type(messages) == str) :
+        messages = json.loads(messages)
     
-    messages = messages or tmsg
+
     model    = model.split("|")[0]
     
     logger.info(f"Using host: {host}, {model} : {messages}")
     
-    completion = client.chat.completions.create(
-        model = model, #"llama3.2",
-        messages= tmsg,
-        )
+    completion = client.chat.completions.create(model=model, messages=messages, 
+                                                temperature=temp, max_tokens=max_tokens )
 
     ret = completion.choices[0].message
     
     return ret.content
+#-------------------------------------------------------------------------------------------    
+@webapi("/gpt/test/")
+def test(request=None, model="llama3.2|mistral", info=None, **kwargs):
+    import json
+    logger.info(f"{model} : info: {info} {type(info)} {kwargs}")
 
+    if (info):
+        infoj = json.loads(info)
+        print(f"INFORMATION: {infoj}")
+    return "OK"
+
+#-------------------------------------------------------------------------------------------    
+@webapi("/gpt/getLLMModels/")
+def getLLMModels(request=None, model="llama3.2|mistral", info=None, **kwargs):
+
+    list = []
+    models = ollama.list()
+    for m in models.models:
+        list.append(m.model)
+
+    list = list + "gpt-3.5-turbo gpt-4o".split()
+    list.sort()
+    return list
 #--------------------------------------------------------------------------------------------    
 # See: for voice options: https://platform.openai.com/docs/guides/text-to-speech
 # alloy is our default

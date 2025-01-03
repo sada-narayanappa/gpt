@@ -15,40 +15,49 @@
 </div>
 <br/>
 
-<button class="btn btn-outline-dark btn-sm" id="fetchBlob" onclick="togglePlay()">
-    <i class="fa fa-play"></i> Play/Stop </button>      
+<!-- ~~~~~~~~~~~~~~~~BUTTONS ~~~~~~~~~~~~ -->
+
+<button class="btn btn-outline-dark" onclick="togglePlay()"  ><i class="fa fa-play"  ></i> Play/Stop </button>      
+<button class="btn btn-outline-dark" onclick="wvTranscribe()"><i class="fa fa-pencil"></i> Transcribe </button>      
+<button class="btn btn-outline-dark" onclick="wvDiarize()"   ><i class="fa fa-book"  ></i> Diarize </button>      
+
+<div class="div1">
+    <label class=label1 ># participants</label> 
+    <input id="nspeakers"  class="input1" value='' size="4">
+</div>
 
 <input id="cfile" type="file" style="align-content: space-around;"  class="input11 "  
     onchange="readfile()"  accept="*" > 
 
-<div class="container" >
-        <button class="btn btn-outline-dark btn-sm" id="fetchBlob" onclick="playDuration()">
-            <i class="fa fa-pencil-square-o"></i> Fetch </button>      
-        <div style="display: inline-block;">
-            <label class=label1 >Start</label>
-            <input class="input1" id=a_start size=1  placeholder="Start as " value="0">
-        </div>
-        <div style="display: inline-block;">
-            <label class=label1 >Length (secs)</label>
-            <input class="input1" id=a_len size=1  placeholder="Length " value="10">
-        </div>
+<textarea id="wvtrans" class="input1" style="height: 64px;" rows="4"></textarea>    
+
+<div class="row">
+    <div class="col-sm-6">
+        <h4>Transcripts</h4>
+        <div id="segments" ></div>
+    </div>
+    <div style="width:10px;">.</div>
+    <div class="col-sm-5">
+        <h4>Darization results</h4>
+        <div id="segments1"></div>
+    </div>
 </div>
-
-
+<!-- ~~~~~~~~~~~~~~~~DIARIZED Text ~~~~~~~~~~~~ -->
 <script>
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 let regions
 let wavesurfer1
 let activeRegion = null
 let loopRegion=0
+let wvBlob = null
 
-function createWavesurfer() {
+async function createWavesurfer() {
     regions = WaveSurfer.Regions.create()
     wavesurfer1 = WaveSurfer.create({
         container:      "#wv",   
         waveColor:      'gray',
         progressColor:  'purple',
-        url:            "/static/gpt/test.wav",
+        url:            "/static/gpt/test_multiple.wav",
         plugins: [
             regions,
             WaveSurfer.Timeline.create({ container: '#wvtimeline'}  ),
@@ -73,8 +82,99 @@ function createWavesurfer() {
         }
     })
     //wavesurfer1.on('click', togglePlay) 
+    setTimeout(getWvBlob, 500)
 }
+async function getWvBlob() {
+    await fetch(wavesurfer1.media.src)
+        .then(response => response.blob())
+        .then(d => wvBlob = d)
+        .then(console.log)
+}
+var segs="  6.380 :   6.900 :  :  Hello.\n  7.640 :   8.720 :  :  Oh, hello.\n  8.900 :  9.780 :  :  I didn't know you were there.\n  9.980 :  10.620 :  :  I needed to design.\n 10.900 : 12.380 :  :  Okay, I heard of deep.\n 12.540 :  13.980 :  :  This is Diane in New Jersey.\n 14.400 :  17.500 :  :  I'm Sheila and Texas originally from Chicago.\n 18.100 :  20.020 :  :  Oh, I'm originally from Chicago also.\n 20.180 :  21.320 :  :  I'm in New Jersey now though.\n 21.880 :  23.720 :  :  Well, there's not much difference.\n 24.120 :  27.260 :  :  At least they all call me a Yankee down here.\n 27.560 :  28.020 :  :  So we'll come back.\n 28.020 :  29.800 :  :  I don't hear that in New Jersey now.\n 29.980 :  29.980 :  : \n 29.980 :  29.980 :  : \n 29.980 :  29.980 :  : \n 29.980 :  29.980 :  : \n"
+var rgns=[]
+var ssegs=[]
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function wvplay(s,e) {
+    wavesurfer1.pause()
+    wavesurfer1.setTime(s)
+    wavesurfer1.play()
+    setTimeout("wavesurfer1.pause()", (e-s)*1000+200)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function wvTranscribeCB1() {
+    ssegs = segs.split("\n")
+    rgns = []
+    for (var s in ssegs) {
+        var ss = ssegs[s].split(":")
+        if (ss[3] && ss[3].trim().length) {
+            var it = {
+                start: ss[0].trim(), end: ss[1].trim(), speaker: ss[2].trim(), label:0, text: ss[3].trim()}
+            rgns.push(it)
+        }
+    }
+    regions.clearRegions()
+    var out = `<table id=transtable class='table table-striped table-sm mydatatablecss'>
+        <tr class=table-primary><th></th><th>start</th><th>end</th><th>Length</th><th>Speaker</th><th>Text</th></tr>
+        `
+    var i = 0
+    for (var r in rgns ) {
+        i++
+        r = rgns[r]
+        console.log(r.start, r.end, r.end-r.start)
+        addRegion(r.start, r.end-r.start, r.label)
+        var p = `<a href=# onclick="wvplay(${r.start}, ${r.end})"><i class="fa fa-play fa-xs" ></i> ${i} &nbsp; play</a>`
+        out += `<tr><td>${p}</td><td>${r.start}</td><td>${r.end}</td><td>${(r.end-r.start).toFixed(3)}</td>
+                <td contenteditable>${r.speaker}</td><td contenteditable2 style="overflow:hidden;"><div  style="overflow:hidden;"> ${r.text} <div></td></tr>`
+    }
+    out += "</table>"
+    $('#segments').html(out)
+    //console.log(rgns)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+var drgns
+function wvDiarizeCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    if (JS_error(responseTxt, statusTxt, ctx, true) ) {
+        return;
+    }
+    drgns = JSON.parse(responseTxt)
+    var out = `<table id=diatable class='table table-striped table-sm mydatatablecss'>
+        <tr class=table-primary><th></th><th>start</th><th>end</th><th>Length</th><th>Speaker</th><th>Text</th></tr>
+        `
+    var i = 0
+    for (var r in drgns ) {
+        i++
+        r = drgns[r]
+        console.log(r.start, r.end, r.end-r.start)
+        addRegion(r.start, r.end-r.start, r.label)
+        var p = `<a href=# onclick="wvplay(${r.start}, ${r.end})"><i class="fa fa-play fa-xs" ></i> ${i} &nbsp; play</a>`
+        out += `<tr><td>${p}</td><td>${r.start.toFixed(3)}</td><td>${r.end.toFixed(3)}</td>
+                <td>${(r.end-r.start).toFixed(3)}</td>
+                <td contenteditable>${r.label}</td><td contenteditable>${r.text}</td></tr>`
+    }
+    out += "</table>"
+    $('#segments1').html(out)
 
+}
+function wvDiarize(blob=wvBlob) {
+    var url = '/scribe/diarize/'
+    data = {file: blob, nspeakers: $('#nspeakers').val().trim(), mode: 0}
+
+    callws(url, null, wvDiarizeCB , data)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    setTimeout(wvTranscribeCB1, 500)
+})
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function wvTranscribeCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    console.log("Got:" , responseTxt.substr(0,64))
+    $('#wvtrans').val(responseTxt)
+}
+async function wvTranscribe(blob=wvBlob){
+    data = {file: blob}
+    resp = await callws('/scribe/transcribe_audio/', "", wvTranscribeCB, data )
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function togglePlay() {
     (wavesurfer1.isPlaying()) ? wavesurfer1.pause(): wavesurfer1.play()
 }
@@ -99,19 +199,21 @@ function readfile(file=null) {
         file = $('#cfile')[0].files[0]
     }
 
-
     var reader = new FileReader();
     reader.readAsArrayBuffer(file);
 
     reader.onload = function (evt) {
         var blob = new window.Blob([new Uint8Array(evt.target.result)]);
         wavesurfer1.loadBlob(blob);
+        wvBlob = blob
     };
 
     reader.onerror = function (evt) {
         alert("An error ocurred reading the file: ", evt);
     };
 }
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// OLD
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 async function playDuration(start=$('#a_start').val(), len=$('#a_len').val(), rblob=myBlob) {
     const blob = await a.fetchAudioBlobForRange(start, len, rblob);

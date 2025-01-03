@@ -1,0 +1,43 @@
+<script>
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    DIARIZE called
+    Diarize an audio stream 
+    blob is a file name on server or upload using file-input widget, an URL or a raw blob
+
+*/
+function _DiarizeCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    if (JS_error(responseTxt, statusTxt, ctx, true) ) {
+        return;
+    }
+    var res = JSON.parse(responseTxt)
+    console.log(res.text)
+}
+function _Diarize(blob=null,callBack=null) {
+    var url = '/scribe/diarize/'
+    var data = {file: blob}
+    callws(url, null, callBack ||  DiarizeCB )
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+/*
+    This shows how to pass a object stringified and send it to backend
+*/
+function testCB(responseTxt, statusTxt, xhr, ctx, formData) {
+    console.log(responseTxt)
+}
+function test() {
+    var url = '/gpt/test/'
+    var o = [
+        {"role": "system"    , "content": "You are a helpful assistant.\n\nHELLO"},
+        {"role": "user"      , "content": null || "tell a joke?"},
+        {"role": "blah"      , content: `
+            MULTILINE STRING
+        `
+        }
+    ]
+    var jobj = JSON.stringify({a:31, b: 32, c:[1,2,3], d: {aa:24}, o:o })
+
+    data = {model: 'sada', info: jobj, mode: 0}
+    callws(url, null, testCB , data)
+}
+
+</script>

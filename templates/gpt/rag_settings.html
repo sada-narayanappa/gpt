@@ -1,0 +1,134 @@
+<style>
+.configure {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 30%;
+    height:60%;
+    background: rgba(255, 255, 255, 0.99);
+    z-index: 100;
+    border: 1px solid #ececec;
+    display: none;
+    padding: 0px;
+    box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px; 
+
+}
+</style>
+        
+<div id="rag_settings" class="configure" >
+<div class="fcontainer" >
+    <div class="header" style="padding: 10px;">
+        <button class=rbutt32 style="float: right;" 
+            onclick="$(this).parent().parent().parent().slideToggle()"><i class="fa fa-close" ></i>
+        </button>
+        <h3> Settings </h3>
+    </div>
+    <!-- ~~~~~~~~~~~ header ~~~~~~~~~~~~~~ -->
+
+    <div class="content" style="padding: 5px;">
+    <div class="row"  >
+            <div class="col-sm-12" >
+                <label class=label1 > Model</label>
+                <select name="model" id="model" required class="input1"  onchange=""
+                    style="width: 100%; font-size: small;border-radius: 6px;">
+                    <option value="llama3.2" >Llama3.2 (Facebook) *</option>
+                    <option value="llama3.2-vision"> Llama3.2 Vision </option>
+                    <option value="llama3.2-vision:90b">llama3.2-vision:90b</option>
+                    <option value="granite3-dense:8b">granite3-dense:8b</option>
+                    <option value="gpt-3.5-turbo"  >gpt-3.5-turbo (open AI)</option>
+                    <option value="gpt-4o"  >gpt-4o (openai) </option>
+                    <option value="mistral" >Mistral</option>
+                    <option value="codellama" >Code Llama - for coding</option>
+                    <option value="gemma:2b" >gemma:2b - from google</option>
+                    <option value="gemma2:27b" >gemma2:27b - from google</option>
+                </select>    
+            </div>
+        </div>
+
+        <label class="label1">LLM Temperature </label> <label class="label1" id="temperature_o"></label>
+        <input type="range" min="0" max="200" value="100" class="input1" id="temperature"
+                oninput= "updateSlide(this, '%')" >
+
+        <label class="label1">Top k</label><label class="label1" id="topk_o"></label>
+        <input type="range" min="0" max="100" value="10" class="input1" id="topk" oninput="updateSlide(this)">
+
+        <label class="label1">Top p</label><label class="label1" id="topp_o"></label>
+        <input type="range" min="0" max="100" value="10" class="input1" id="topp" oninput="updateSlide(this)">
+
+        <div class="row"  >
+            <div class="col-sm-2" >
+                <label class=label1 style="background-color: transparent;"><i class="fa fa-globe"></i></label>
+                <input  type="checkbox"  title="search internet" data-toggle="tooltip" state="active" id="activeid"  class="input1" checked>    
+            </div>
+            <div class="col-sm-9">
+                <label class=label1 >Key(*) </label>
+                <input name="okey" id="okey" class="input1" required>    
+            </div>
+            <div class="col-sm-1">
+            </div>
+            <div class="col-sm-1" >
+            </div>
+        </div>
+    </div>
+    <!-- ~~~~~~~~~~~ footer ~~~~~~~~~~~~~~ -->
+    <div class="footer" style="background-color: #fff; text-align: center;">
+        <hr/>
+        <button id="datasetupdatebut" class="btn btn-info btn-sm" type="button" onclick="resetOptions()">reset</button>
+        <button class="btn btn-outline-info btn-sm" 
+            onclick="$(this).parent().parent().parent().slideToggle()"> &nbsp;<i class="fa fa-times"></i>&nbsp;
+        </button>
+    </div>
+</div>
+</div>
+<script>
+function updateSlide(w, t="") {
+    //console.log(w)
+    w = $(w)
+    var v =w[0].value
+    if (t.startsWith('%')) {
+        let min = $(w).prop('min');
+        let max = $(w).prop('max');
+        v = (v/(max-min)).toFixed(2) +"%"
+    }
+    $('#'+w[0].id+'_o').html( v)
+}   
+function resetOptions() {
+    $('#temperature').val(100)
+    $('#topp').val(5)
+    $('#topk').val(5)
+    showOptions()
+}
+function showOptions() {
+    updateSlide('#temperature', '%')
+    updateSlide('#topp')
+    updateSlide('#topk')
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function getLLMModelsCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    responseTxt  = responseTxt.replaceAll("NaN", '""')
+    var resp = JSON.parse(responseTxt)
+
+    var ddl = $(ctx.id )
+
+    var opt = ""
+    for (var r in resp) {
+        var v = resp[r]
+        var s = ( v == "llama3.2") || v.startsWith("llama3.2:") ? "selected" : "";
+        opt += `<option value="${v}" ${s}> ${v} </option>\n`
+    }
+    console.log(opt)
+    ddl.empty();
+    ddl.html(opt)
+}
+    
+function getLLMModels(id = "#model" ) {
+    ctx = { id: id  }
+    callws("/gpt/getLLMModels/", "", getLLMModelsCB, ctx)
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+$(document).ready(function() {
+    restoreZZValues()
+    showOptions()
+    getLLMModels()
+})
+</script>

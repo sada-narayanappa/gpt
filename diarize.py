@@ -3,11 +3,12 @@ import os, torch
 from pyannote.audio import Pipeline
 from pathlib import Path
 from mangorest.mango import webapi 
+import platform; 
 
 device = "cpu"
 if (torch.cuda.is_available() ):
     device = "cuda"
-elif torch.backends.mps.is_available():
+elif torch.backends.mps.is_available() and platform.processor() =='arm':
     device = "mps"
 # -----------------------------------------------------------------------------
 diarizer = None
@@ -64,7 +65,13 @@ def getdiarizerLocal(path_to_config: str | Path) -> Pipeline:
     diarizer = pipeline
     return diarizer
 
-path=searchfor()
+try:
+    dir = os.path.dirname(__file__)
+    path= f'{dir}/models/pyannote.yml'
+except:
+    path="models/pyannote.yml"
+    pass
+path=searchfor(path)
 diarizer=None
 if ( path ):
     diarizer = getdiarizerLocal(path)
@@ -75,20 +82,35 @@ else:
 Diarize first file sent in
 '''
 @webapi("/scribe/diarize/")
-def diarize(request=None,file="/tmp/test_multiple.wav", nspeakers=None ):
-    if ( request):
+def diarize(request=None,file="/tmp/test_multiple.wav", nspeakers=None, **kwargs ):
+    print(f"<============= {file} n={nspeakers} {kwargs}" )
+    global diarizer
+    if ( not diarizer) :
+        return "Sorry - diarizer not loaded!"
+
+    if ( request and len(request.FILES) > 0):
         for f in request.FILES.getlist('file'):
             content = f.read()
             file = f"/tmp/{str(f)}"
             with open(file, "wb") as f:
                 f.write(content)
-    
-    diarization = diarizer(file, num_speakers=nspeakers)
-    ret = "[\n"
+            break; #lets do one file at a time now
+    elif (type(file) == str):
+        pass # Cool this is what we wanted
+    else:
+        pass
+        # filename="/tmp/diarize.wav"
+        # with open(filename, "wb") as f:
+        #     f.write(file)
+        # file = filename
+
+    print(f"<============= {file} n={nspeakers} {kwargs}" )
+    diarization = diarizer(file, num_speakers= nspeakers or None )
+    ret = []
     for segment, _, speaker in diarization.itertracks(yield_label=True):
         #print(f'Speaker "{speaker}" - "{segment}"')
         id = int(speaker.split('_')[1])
-        ret +=f'{{start: {segment.start}, end: {segment.end}, label: {id} }}\n'
+        e = dict(start=segment.start, end = segment.end, label=id)
+        ret.append(e)
         
-    ret += "]"
     return ret

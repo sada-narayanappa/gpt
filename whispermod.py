@@ -6,10 +6,11 @@ import whisper,  os, datetime, librosa, io, soundfile, sys, hashlib, torch
 import numpy as np
 
 #-----------------------------models-----------------------------------------------------------------
+import platform
 device = "cpu"
 if (torch.cuda.is_available() ):
     device = "cuda"
-#elif torch.backends.mps.is_available():
+#elif torch.backends.mps.is_available() and platform.processor() =='arm':
 #    device = "mps"
 #-----------------------------------------------------------------------------------
 import threading
@@ -37,23 +38,32 @@ def is_audio_file(filename):
     audio_extensions = [".mp3", ".wav", ".flac", ".ogg", ".aac", ".m4a"] 
     return os.path.splitext(filename)[1].lower() in audio_extensions
 # ------------------------------------------------------------------------------
-def transcribe(fn, offset=0, duration=60*60, detectSpeakers=1, **kwargs):
+def transcribe(fn, offset=0, duration=60*60, detectSpeakers=0, **kwargs):
+    filename = fn
     if (type(fn) == str):
         data, sample_rate = librosa.load(fn, offset=offset, duration=duration, mono=True, sr=16000)
     else:
+        filename = "/tmp/bytes.wav"
         content = io.BytesIO(fn)
         data, sample_rate = librosa.load(content,sr=16000, mono=True, offset=offset, duration=duration)
+        with open(filename, "wb") as f:
+            f.write(fn)
 
-    ret = getTranscriber().transcribe(data)
-    for s in ret.get('segments', []):
-        s.pop('tokens')
+    results = getTranscriber().transcribe(filename, word_timestamps=True)
+    txt =""
+    for t in results.get('segments', []):
+        speaker=""
         if ( detectSpeakers):
-            speaker = who(data, s.get('start'), s.get('end'), **kwargs)
-            s['speakers'] = [speaker]
+            speaker = who(data, t['start'], t['end'], **kwargs)
+        o=f"{t['start']:-7.3f} : {t['end']:7.3f} : {speaker} : {t['text']}"
+        txt += o + "\n"
+    ret = dict(file=filename, trans= results['text'], segs=txt)
 
     return ret
 
-def transcribeWS(request, **kwargs):
+#--------------------------------------------------------------------------------------------------------    
+@webapi("/scribe/transcribe_audio/")
+def transcribeAudio(request, **kwargs):
     for f in request.FILES.getlist('file'):
         content = f.read()
 
@@ -107,13 +117,13 @@ def transcribe_youtube( url = test_url , force_download=False, force_transribe=F
 
 #--------------------------------------------------------------------------------------------------------    
 @webapi("/scribe/transcribe_media/")
-def transcribe_media( request, url=None, force_reload="", **kwargs):    
-    print(f"{force_reload} <==========")
+def transcribe_media( request, file="", url=None, force_reload="", **kwargs):    
     ret  = [] 
     # STEP 1. extract from file
     for f in request.FILES.getlist('file'):
         content = f.read()
         filename = f"/tmp/{str(f)}"
+        print(f"{force_reload} {filename} <==========")
         
         if ( not (is_video_file(filename) or is_audio_file(filename) ) ):
             ret.append (dict(file=filename, trans=f"{filename}: - not a media file", segs="") )
@@ -139,7 +149,7 @@ def transcribe_media( request, url=None, force_reload="", **kwargs):
             results = transcribe_file(filename)
             txt =""
             for t in results['segments']:
-                o=f"{t['start']:-7.2f} - {t['end']:7.2f} : {t['text']}"
+                o=f"{t['start']:-7.2f} : {t['end']:7.2f} : {t['text']}"
                 txt += o + "\n"
             ret.append (dict(file=filename, trans= results['text'], segs=txt))
             
