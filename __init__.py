@@ -1,4 +1,6 @@
-import os
+import os, sys
+
+sys.path.append("/opt/utils/geo_utils/")
 try:
     import geoapp.transcribe
     import gpt.index_docs

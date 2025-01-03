@@ -9,3 +9,6 @@ pytube
 pyannote-audio 
 torchaudio
 librosa
+python-docx 
+langchain_elasticsearch
+pdfplumber
