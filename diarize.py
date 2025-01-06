@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os, torch
-from pyannote.audio import Pipeline
 from pathlib import Path
 from mangorest.mango import webapi 
 import platform; 
@@ -13,6 +12,7 @@ elif torch.backends.mps.is_available() and platform.processor() =='arm':
 # -----------------------------------------------------------------------------
 diarizer = None
 def getdiarizer():
+    from pyannote.audio import Pipeline
     global diarizer 
     if ( diarizer is not None):
         return diarizer
@@ -40,7 +40,7 @@ def searchfor(loc="models/pyannote.yml", max_depth=2):
             return loc
     return ""
     
-def getdiarizerLocal(path_to_config: str | Path) -> Pipeline:
+def getdiarizerLocal(path_to_config: str | Path) :
     global diarizer 
     if ( diarizer is not None):
         return diarizer
@@ -65,18 +65,19 @@ def getdiarizerLocal(path_to_config: str | Path) -> Pipeline:
     diarizer = pipeline
     return diarizer
 
-try:
-    dir = os.path.dirname(__file__)
-    path= f'{dir}/models/pyannote.yml'
-except:
-    path="models/pyannote.yml"
-    pass
-path=searchfor(path)
-diarizer=None
-if ( path ):
-    diarizer = getdiarizerLocal(path)
-else:
-    print("Model not found")
+def testDiarize():
+    try:
+        dir = os.path.dirname(__file__)
+        path= f'{dir}/models/pyannote.yml'
+    except:
+        path="models/pyannote.yml"
+        pass
+    path=searchfor(path)
+    diarizer=None
+    if ( path ):
+        diarizer = getdiarizerLocal(path)
+    else:
+        print("Model not found")
 # -----------------------------------------------------------------------------
 '''
 Diarize first file sent in
