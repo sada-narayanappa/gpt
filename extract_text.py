@@ -2,7 +2,6 @@
 
 import sys, os, logging,datetime, hashlib, pandas as pd
 logger = logging.getLogger( "geoapp" )
-import docx
 from langchain_core.documents import Document
 from mangorest.mango import webapi
 
@@ -50,6 +49,7 @@ def extractTextPDF(file):
 # ------------------------------------------------------------------------------------------
 # Simply extarct text rfrom PDF file
 def extractTextDOC(file):
+    import docx
     document = docx.Document(file)
     txts=[]
     for p in document.paragraphs:
@@ -107,79 +107,3 @@ def getChunks(file, chunk_size=2000, overlap=256 ):
         docs.append(d)
 
     return docs
-
-# ------------------------------------------------------------------------------------------
-# Following functions extract chunks
-# ------------------------------------------------------------------------------------------
-def extractDocx(file):
-    document = docx.Document(file)
-
-    # STEP 1: extract tables 
-    tables=[]
-    for table in document.tables:
-        data = []
-        keys = None
-        for i, row in enumerate(table.rows):
-            text = (cell.text for cell in row.cells)
-
-            if i == 0:
-                keys = tuple(text)
-                continue
-            row_data = dict(zip(keys, text))
-            data.append(row_data)
-
-        df = pd.DataFrame(data)
-        tables.append(df)
-
-    # STEP 2: extract text 
-    paras = []
-    paraTexts = []
-    secHeader = ""
-
-    for para in document.paragraphs:
-        if (not para.text.strip()):
-            continue;
-        
-        if para.style.name != "Normal" and "Paragraph" not in para.style.name:
-            #print("==>", para.style.name)
-            if ( len(paraTexts) > 0):
-                paras.append(Document(metadata={"head": secHeader, 'source': file}, 
-                                       page_content="\n".join(paraTexts)))
-                paraTexts = []
-
-            secHeader = para.text 
-            continue;
-        
-        paraTexts.append(para.text)
-
-    return tables, paras
-
-# ------------------------------------------------------------------------------------------
-def extractPDF(file):
-    import pdfplumber
-
-    docs = []
-    with pdfplumber.open(file) as doc:
-        for i, page in enumerate(doc.pages):
-            #lines = page.extract_text_lines()
-            #txt = "\n".join([l['text'] for l in lines])
-            txt = page.extract_text_simple()
-            meta= dict(source=file, page=1)
-            docs.append(Document(metadata=meta, page_content=txt))
-
-    return [], docs
-
-# ------------------------------------------------------------------------------------------
-def extractTextChunks(file):
-    tables, paras = [], ""
-    if (file.endswith("doc") or file.endswith("docx") ):
-        tables, paras =  extractDocx(file)
-    elif (file.endswith("pdf") ):
-        tables, paras = extractPDF(file)
-        #ofile = convertToDoc(file)
-        #return extractDocx(ofile)
-    else:
-        raise (f"Unknown file type {file}")        
-    
-    return tables, paras
-
