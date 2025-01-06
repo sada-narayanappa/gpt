@@ -1,7 +1,6 @@
 from mangorest.mango import webapi 
 import colabexts
 from colabexts import jcommon
-from pytube import YouTube
 import whisper,  os, datetime, librosa, io, soundfile, sys, hashlib, torch
 import numpy as np
 
@@ -92,6 +91,7 @@ test_url = "https://www.youtube.com/watch?v=DuSDVj9a4WM&list=PLEpvS3HCVQ5_ZlyF1_
 
 @webapi("/scribe/transcribe_youtube/")
 def transcribe_youtube( url = test_url , force_download=False, force_transribe=False, **kwargs):    
+    from pytube import YouTube
     h = hashlib.md5(url.encode())
     file = "/tmp/" + str(h.hexdigest()) + ".mp4"
     
