@@ -1,6 +1,7 @@
 {% extends "common.html" %}
 {% block content %}
 {% include "gpt/top.html" %}
+{% include "gpt/llm_utils.html" %}
 {% include "gpt/kb_search_include.html" %}
 {% include "gpt/kb_indices_include.html" %}
 
@@ -248,27 +249,6 @@ function uploadFiles() {
     callws("/gpt/uploadFiles/", "indexform", saveCB, data)
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-function getLLMModelsCB( responseTxt, statusTxt, xhr, ctx, formData) {
-    responseTxt  = responseTxt.replaceAll("NaN", '""')
-    var resp = JSON.parse(responseTxt)
-
-    var ddl = $(ctx.id )
-
-    var opt = ""
-    for (var r in resp) {
-        var v = resp[r]
-        var s = ( v == "llama3.2") || v.startsWith("llama3.2:") ? "selected" : "";
-        s=""
-        opt += `<option value="${v}" ${s}> ${v} </option>\n`
-    }
-    ddl.empty();
-    ddl.html(opt)
-}
-    
-function getLLMModels(id = "#model" ) {
-    ctx = { id: id  }
-    callws("/gpt/getLLMModels/", "", getLLMModelsCB, ctx)
-}
 $(document).ready(function() {
     getLLMModels()
 })

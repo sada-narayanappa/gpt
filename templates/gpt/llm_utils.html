@@ -35,4 +35,27 @@ function callLLMID(callBack=runClickCB, prompt_inpout=$('#prompt'), model="llama
     } 
     return callLLM(opts={ callBack: callBack, prompt: prompt, model: model})
 }
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+function getLLMModelsCB( responseTxt, statusTxt, xhr, ctx, formData) {
+    responseTxt  = responseTxt.replaceAll("NaN", '""')
+    var resp = JSON.parse(responseTxt)
+
+    var ddl = $(ctx.id )
+
+    var opt = ""
+    for (var r in resp) {
+        var v = resp[r]
+        var s = ( v == "llama3.2") || v.startsWith("llama3.2:") ? "selected" : "";
+        s=""
+        opt += `<option value="${v}" ${s}> ${v} </option>\n`
+    }
+    ddl.empty();
+    ddl.html(opt)
+}
+    
+function getLLMModels(id = "#model" ) {
+    ctx = { id: id  }
+    callws("/gpt/getLLMModels/", "", getLLMModelsCB, ctx)
+}
+
 </script>

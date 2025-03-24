@@ -1,4 +1,4 @@
-DEFAULT_APP = "geospaces"
+DEFAULT_APP = "gpt"
 
 '''
 You can include this in your html pages and refer to these variables:

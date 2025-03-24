@@ -47,8 +47,14 @@ else:
     proxies = dict(
         http_proxy = os.environ.get('http_proxy',''),
         https_proxy= os.environ.get('https_proxy',''),
-        no_proxy= os.environ.get('no_proxy','')
+        #no_proxy= os.environ.get('no_proxy','')
     )
+    proxies = {
+        #"http_proxy://"  : os.environ.get('http_proxy',''),
+        #"https_proxy://" : os.environ.get('https_proxy',''),
+        #"no_proxy": os.environ.get('no_proxy','')
+    }
+    print(f"\n******PROXIES ********\n{proxies}\n*******")
 #-----------------------------------------------------------------------------------------    
 def getClient(host=OLLAMA_HOST, key=None, proxies=proxies):
     client = OpenAI( base_url = host , 
