@@ -1,10 +1,6 @@
 #!/usr/bin/env python 
 
-import sys, os, torch, logging,datetime, httpx,re, hashlib, json, base64
-from ollama import Client
-import ollama
-from mangorest.mango import webapi
-from openai import OpenAI
+import sys, os, torch, logging
 
 logger = logging.getLogger( "gpt" )
 #------------------------------------------INITIALIZE LLM Stuff -------------------- 
@@ -17,18 +13,39 @@ elif torch.backends.mps.is_available():
 OLLAMA_HOST= 'http://127.0.0.1:11434/v1'
 OPENAI_KEY = "NO KEY"
 
-sys.path.append(os.path.expanduser("~/.django") )
-if (os.path.exists(os.path.expanduser("~/.django/my_config.py"))):
-    import my_config
-    try:
-        from my_config import OLLAMA_HOST
-        OPENAI_KEY=my_config.OPENAI_KEY
-    except:
-        pass
-#------------------------------------------INITIALIZE the DB-------------------- 
-if "/opt/utils/geo_utils/" not in sys.path: sys.path.append("/opt/utils/geo_utils/" )
-from services.gen.myjson import myjson
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+try:
+    from dotenv import load_dotenv, find_dotenv
 
+    load_dotenv(find_dotenv("./.env"))
+except ImportError:
+    print("dotenv not found!, skipping...")
+
+
+if os.path.exists("my_config.py"):
+    import my_config
+    from my_config import *
+else:
+    home_env = os.path.expanduser("~/.django/")
+    home_con = home_env+ "/my_config.py"
+    if not (home_env in sys.path):
+        sys.path.append(home_env)
+
+    if os.path.exists(home_con):
+        import my_config
+        from my_config import *
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def get_from_env_or_config(key):
+    v = os.environ.get(key, "")
+    if (v):
+        return v
+    try:
+        v = vars(my_config).get(key)
+        return v
+    except:
+        return None
+#------------------------------------------INITIALIZE the DB-------------------- 
 """
     Clear GPU memory cache for different platforms.
 """

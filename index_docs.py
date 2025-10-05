@@ -29,8 +29,7 @@ if (os.path.exists(os.path.expanduser("~/.django/my_config.py"))):
     except:
         pass
 #------------------------------------------INITIALIZE the DB-------------------- 
-if "/opt/utils/geo_utils/" not in sys.path: sys.path.append("/opt/utils/geo_utils/" )
-from services.gen.myjson import myjson
+from gpt.jsondb import myjson
 
 MYDB = myjson(base=BASE, db='INDICES')
 INDEX_TABLE = "indexes"

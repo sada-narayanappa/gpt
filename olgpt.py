@@ -116,6 +116,8 @@ def llmVision(request=None, model="llama3.2-vision|llama3.2-vision:90b",
             messages = json.loads(messages)
 
     #print(messages)
+    logger.info(f"Using , {model} : {messages}")
+
     resp = ollama.chat( model= model, messages=messages)
 
     return resp.message.content

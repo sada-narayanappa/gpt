@@ -135,6 +135,7 @@ function formatTranscriptionCB(responseTxt, statusTxt, xhr, ctx, formData) {
 }
 function formatTranscription() {
     // Get keywords
+    
     var p = $('#result_text').text()
     var m = `Split the following text and make it into paragraphs. Just return the final text without any other information:\n\n ${p}`
     var opts = {

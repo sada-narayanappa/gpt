@@ -1,1 +1,0 @@
-qwen2.5:latest qwen2:latest  all-minilm:L6-v2 all-minilm:latest granite3-dense:8b  llama3.2-vision:90b  llama3.2-vision:latest gemma2:27b gemma:2b gemma:latest mistral:latest codellama:latest llama3.2:latest 
