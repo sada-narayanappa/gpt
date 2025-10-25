@@ -1,6 +1,5 @@
 torch
 ollama
-whisper
 openai
 langchain
 langchain-ollama

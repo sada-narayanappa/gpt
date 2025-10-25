@@ -60,7 +60,7 @@ def getClient(host=OLLAMA_HOST, key=None, proxies=proxies):
     client = OpenAI( base_url = host , 
                 api_key = key or my_config.OPENAI_KEY,
                 http_client=httpx.Client(
-                    proxies=proxies,
+                    #proxies=proxies,
                     transport=httpx.HTTPTransport(local_address="0.0.0.0"),
                     verify=False
                 ),
